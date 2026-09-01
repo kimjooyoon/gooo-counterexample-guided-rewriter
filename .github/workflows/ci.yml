@@ -22,15 +22,13 @@ jobs:
       - name: Semantic audit
         run: scripts/semantic-audit.sh
       - name: Fixed conformance and artifacts
-        id: conformance
         run: |
           out="${RUNNER_TEMP}/gooo-counterexample-guided-rewriter-${GITHUB_RUN_ID}"
           mkdir -p "$out"
           scripts/conformance.sh "$out"
-          echo "output=$out" >> "$GITHUB_OUTPUT"
       - name: Upload conformance artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: counterexample-guided-rewriter-conformance
-          path: ${{ steps.conformance.outputs.output }}/
+          path: ${{ runner.temp }}/gooo-counterexample-guided-rewriter-${{ github.run_id }}/
