@@ -1,0 +1,18 @@
+{
+  "schema": "gooo/counterexample-guided-rewriter/denominator/v1",
+  "authority": "metacode",
+  "id": "counterexample-guided-rewriter-v1",
+  "unit": "counterexample",
+  "scenarios": 7,
+  "fixed_case_ids": [
+    "closed-guard-insertion",
+    "closed-effect-narrowing",
+    "closed-branch-split",
+    "ambiguous-equal-candidates",
+    "missing-origin",
+    "reason-drift",
+    "replay-closed"
+  ],
+  "decision_precedence": ["REFUTED", "UNKNOWN", "CLOSED"],
+  "cross_project_gate": 0
+}

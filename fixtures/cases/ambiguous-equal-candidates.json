@@ -1,0 +1,34 @@
+{
+  "schema": "gooo/semantic_counterexample_reduction_report/v1",
+  "id": "ambiguous-equal-candidates",
+  "scenario": "ambiguous-equal-candidates",
+  "source_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "toolchain_digest": "sha256:e2147def056543c506d158ecd95cd8e666d91bfbaf1571d5b07aef4dc99ca112",
+  "origin_source_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "origin_anchor": "effect-ambiguous",
+  "baseline": {
+    "decision": "REFUTED",
+    "reason": "two equal repairs explain the counterexample",
+    "reason_digest": "sha256:1d796d1002a09b520bee5727974456bea42560d10b1747f5599ce9c62b2ac868",
+    "effect_trace": ["effect:read"],
+    "counterexample_visible": true
+  },
+  "target_terminal": {
+    "decision": "CLOSED",
+    "reason": "ambiguous repair resolved",
+    "reason_digest": "sha256:17a4f4701e21df291381f0db3ac3a58c696e303b6757bc8b6a2b6a11cec43915",
+    "effect_trace": ["effect:read"],
+    "counterexample_visible": true
+  },
+  "replay": {"baseline_replays": 2, "candidate_replays": 2},
+  "reduced_graph": {
+    "schema": "gooo/semantic_graph/v1",
+    "nodes": [
+      {"id": "effect-ambiguous", "kind": "effect", "type": "effect<io>", "label": "ambiguous effect", "attributes": {"guardable": "true", "narrowable": "true", "effect_scope": "broad"}},
+      {"id": "counterexample-anchor", "kind": "observation", "type": "counterexample", "label": "ambiguous observation"}
+    ],
+    "edges": [
+      {"id": "control-ambiguous", "from": "counterexample-anchor", "to": "effect-ambiguous", "kind": "control", "type": "reaches"}
+    ]
+  }
+}

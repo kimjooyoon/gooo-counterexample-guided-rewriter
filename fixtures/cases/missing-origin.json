@@ -1,0 +1,28 @@
+{
+  "schema": "gooo/semantic_counterexample_reduction_report/v1",
+  "id": "missing-origin",
+  "scenario": "missing-origin",
+  "source_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "toolchain_digest": "sha256:e2147def056543c506d158ecd95cd8e666d91bfbaf1571d5b07aef4dc99ca112",
+  "baseline": {
+    "decision": "REFUTED",
+    "reason": "origin cannot be proven",
+    "reason_digest": "sha256:892efaad14b78be88f1aba4fe6787916488a71324defe465532d00cf41d13f21",
+    "effect_trace": ["effect:publish"],
+    "counterexample_visible": true
+  },
+  "target_terminal": {
+    "decision": "CLOSED",
+    "reason": "origin-backed repair",
+    "reason_digest": "sha256:dd714f5524961f294660edc35ad7b268d73912639c5a5056904b96ff7277cd0a",
+    "effect_trace": ["effect:publish"],
+    "counterexample_visible": true
+  },
+  "reduced_graph": {
+    "schema": "gooo/semantic_graph/v1",
+    "nodes": [
+      {"id": "effect-publish", "kind": "effect", "type": "effect<external-write>", "label": "publish without origin", "attributes": {"guardable": "true"}}
+    ],
+    "edges": []
+  }
+}

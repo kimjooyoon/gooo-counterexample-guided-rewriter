@@ -1,0 +1,38 @@
+gooo counterexample_guided_rewriter v1
+
+authority metacode
+denominator id=counterexample-guided-rewriter-v1 scenarios=7 unit=counterexample
+decision statuses=CLOSED,UNKNOWN,REFUTED
+precedence REFUTED>UNKNOWN>CLOSED
+unknown_fields stage,step,reason,unknown_class,next_operation,blocked_by
+source_policy input=immutable_digest output=caller_owned_temp repository_writes=zero
+toolchain go=1.27 digest=sha256:e2147def056543c506d158ecd95cd8e666d91bfbaf1571d5b07aef4dc99ca112
+search bound=1 order=guard-insertion,effect-narrowing,reason-preserving-branch-split
+replay_replays count=2
+cross_project_gate required=0
+
+predicate ordinal=1 id=precondition kind=typed_precondition preserve=true
+predicate ordinal=2 id=origin-digest kind=origin_digest preserve=true
+predicate ordinal=3 id=ir-digest kind=transformed_ir_digest preserve=true
+predicate ordinal=4 id=semantic-ids kind=affected_semantic_ids preserve=true
+predicate ordinal=5 id=terminal-reason kind=terminal_reason preserve=true
+predicate ordinal=6 id=effect-trace kind=effect_trace preserve=true
+predicate ordinal=7 id=replay kind=counterexample_replay preserve=true
+predicate ordinal=8 id=visibility kind=counterexample_visibility preserve=true
+
+operator ordinal=1 id=guard-insertion kind=guard_insertion target=effect cost=1
+operator ordinal=2 id=effect-narrowing kind=effect_narrowing target=effect cost=1
+operator ordinal=3 id=reason-preserving-branch-split kind=branch_split target=branch cost=1
+
+oracle name=immutable-reducer repository=kimjooyoon/gooo-semantic-counterexample-reducer release=v0.1.1 digest=sha256:dfc2e693be2bf3f7bc675e242c9d944439e388f73a08c2bad8d62c79eefc9ecb required=false
+oracle name=error-directed-planner repository=kimjooyoon/gooo-error-directed-evolution-planner release=v0.1.1 digest=sha256:333f09467d3c4d94a9e29b7ef2c3f98d31b8db4c55fa266e92985c3f5106fa40 required=false
+
+generation_plan order=candidate-artifacts,case-reports,conformance-report,metrics outputs=candidate-*.gooo,candidate-*.ir.json,case-report.json,conformance-report.json,metrics.json
+
+scenario ordinal=1 id=closed-guard-insertion fixture=fixtures/cases/closed-guard-insertion.json expected=CLOSED
+scenario ordinal=2 id=closed-effect-narrowing fixture=fixtures/cases/closed-effect-narrowing.json expected=CLOSED
+scenario ordinal=3 id=closed-branch-split fixture=fixtures/cases/closed-branch-split.json expected=CLOSED
+scenario ordinal=4 id=ambiguous-equal-candidates fixture=fixtures/cases/ambiguous-equal-candidates.json expected=UNKNOWN
+scenario ordinal=5 id=missing-origin fixture=fixtures/cases/missing-origin.json expected=UNKNOWN
+scenario ordinal=6 id=reason-drift fixture=fixtures/cases/reason-drift.json expected=REFUTED
+scenario ordinal=7 id=replay-closed fixture=fixtures/cases/replay-closed.json expected=CLOSED

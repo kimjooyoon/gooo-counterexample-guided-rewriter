@@ -1,0 +1,34 @@
+{
+  "schema": "gooo/semantic_counterexample_reduction_report/v1",
+  "id": "closed-effect-narrowing",
+  "scenario": "closed-effect-narrowing",
+  "source_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "toolchain_digest": "sha256:e2147def056543c506d158ecd95cd8e666d91bfbaf1571d5b07aef4dc99ca112",
+  "origin_source_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "origin_anchor": "effect-read",
+  "baseline": {
+    "decision": "REFUTED",
+    "reason": "effect capability is wider than the contract",
+    "reason_digest": "sha256:2ae82655f27aa6432b21e9b0b8c35754b27f04ef918fd4f6e80a8d5178c8594d",
+    "effect_trace": ["effect:read"],
+    "counterexample_visible": true
+  },
+  "target_terminal": {
+    "decision": "CLOSED",
+    "reason": "effect capability narrowed",
+    "reason_digest": "sha256:c4e8ce6e7bd14b1b2ce14f278557bfaa806784959d7984156fb2285cf416b34c",
+    "effect_trace": ["effect:read"],
+    "counterexample_visible": true
+  },
+  "replay": {"baseline_replays": 2, "candidate_replays": 2},
+  "reduced_graph": {
+    "schema": "gooo/semantic_graph/v1",
+    "nodes": [
+      {"id": "effect-read", "kind": "effect", "type": "effect<io>", "label": "read source", "attributes": {"narrowable": "true", "effect_scope": "broad"}},
+      {"id": "counterexample-anchor", "kind": "observation", "type": "counterexample", "label": "broad read observed"}
+    ],
+    "edges": [
+      {"id": "control-read", "from": "counterexample-anchor", "to": "effect-read", "kind": "control", "type": "reaches"}
+    ]
+  }
+}

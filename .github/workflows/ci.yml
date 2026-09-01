@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.27.x'
+      - name: Test
+        run: go test ./... -count=1
+      - name: Vet
+        run: go vet ./...
+      - name: Semantic audit
+        run: scripts/semantic-audit.sh
+      - name: Fixed conformance and artifacts
+        id: conformance
+        run: |
+          out="${RUNNER_TEMP}/gooo-counterexample-guided-rewriter-${GITHUB_RUN_ID}"
+          mkdir -p "$out"
+          scripts/conformance.sh "$out"
+          echo "output=$out" >> "$GITHUB_OUTPUT"
+      - name: Upload conformance artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: counterexample-guided-rewriter-conformance
+          path: ${{ steps.conformance.outputs.output }}/

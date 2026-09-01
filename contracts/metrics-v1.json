@@ -1,0 +1,11 @@
+{
+  "schema": "gooo/counterexample-guided-rewriter/metrics/v1",
+  "inventory_excludes": ["README.md", ".git"],
+  "integer_fields": [
+    "go_files", "gooo_files", "physical_lines", "descendant_dirs", "regular_files",
+    "generated_files", "generated_bytes", "wall_ms", "peak_rss_kib",
+    "tests_total", "tests_selected", "tests_executed", "tests_reused", "tests_failed", "tests_unknown"
+  ],
+  "test_semantics": "fixed counterexample denominator",
+  "repository_writes": 0
+}

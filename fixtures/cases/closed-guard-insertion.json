@@ -1,0 +1,34 @@
+{
+  "schema": "gooo/semantic_counterexample_reduction_report/v1",
+  "id": "closed-guard-insertion",
+  "scenario": "closed-guard-insertion",
+  "source_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "toolchain_digest": "sha256:e2147def056543c506d158ecd95cd8e666d91bfbaf1571d5b07aef4dc99ca112",
+  "origin_source_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "origin_anchor": "effect-publish",
+  "baseline": {
+    "decision": "REFUTED",
+    "reason": "unsafe effect reached without guard",
+    "reason_digest": "sha256:40a70baaf851381e0ff3f46cd26d13b420b7fb6d30b9b9d59e25cc0c0698828f",
+    "effect_trace": ["effect:publish"],
+    "counterexample_visible": true
+  },
+  "target_terminal": {
+    "decision": "CLOSED",
+    "reason": "guarded effect is safe",
+    "reason_digest": "sha256:840ae01336d634c15026acfa6a2a7e781d919ac1226145f663601a6d4ef1919a",
+    "effect_trace": ["effect:publish"],
+    "counterexample_visible": true
+  },
+  "replay": {"baseline_replays": 2, "candidate_replays": 2},
+  "reduced_graph": {
+    "schema": "gooo/semantic_graph/v1",
+    "nodes": [
+      {"id": "effect-publish", "kind": "effect", "type": "effect<external-write>", "label": "publish result", "attributes": {"guardable": "true", "effect_scope": "broad"}},
+      {"id": "counterexample-anchor", "kind": "observation", "type": "counterexample", "label": "unsafe publish observed"}
+    ],
+    "edges": [
+      {"id": "control-publish", "from": "counterexample-anchor", "to": "effect-publish", "kind": "control", "type": "reaches"}
+    ]
+  }
+}

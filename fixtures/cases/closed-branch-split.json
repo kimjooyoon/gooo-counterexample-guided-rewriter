@@ -1,0 +1,34 @@
+{
+  "schema": "gooo/semantic_counterexample_reduction_report/v1",
+  "id": "closed-branch-split",
+  "scenario": "closed-branch-split",
+  "source_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "toolchain_digest": "sha256:e2147def056543c506d158ecd95cd8e666d91bfbaf1571d5b07aef4dc99ca112",
+  "origin_source_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "origin_anchor": "branch-result",
+  "baseline": {
+    "decision": "REFUTED",
+    "reason": "branch conflates two terminal outcomes",
+    "reason_digest": "sha256:dcd1823bd509fbc1d7bc5ce16bc47fec397893d806c9f0eed604d840fe9fc89d",
+    "effect_trace": ["effect:validate", "effect:publish"],
+    "counterexample_visible": true
+  },
+  "target_terminal": {
+    "decision": "CLOSED",
+    "reason": "branch outcomes preserve reason",
+    "reason_digest": "sha256:874db0876fd8d1fb31323a6ac0b3bfd1442b236a35ca8d26dce77e3a476f28bc",
+    "effect_trace": ["effect:validate", "effect:publish"],
+    "counterexample_visible": true
+  },
+  "replay": {"baseline_replays": 2, "candidate_replays": 2},
+  "reduced_graph": {
+    "schema": "gooo/semantic_graph/v1",
+    "nodes": [
+      {"id": "branch-result", "kind": "branch", "type": "branch<merged>", "label": "result branch", "attributes": {"splittable": "true"}},
+      {"id": "counterexample-anchor", "kind": "observation", "type": "counterexample", "label": "merged outcome observed"}
+    ],
+    "edges": [
+      {"id": "control-branch", "from": "counterexample-anchor", "to": "branch-result", "kind": "control", "type": "reaches"}
+    ]
+  }
+}
