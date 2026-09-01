@@ -21,6 +21,8 @@ jobs:
         run: go vet ./...
       - name: Semantic audit
         run: scripts/semantic-audit.sh
+      - name: Immutable release guard contract
+        run: scripts/verify-immutable-release.sh --contract
       - name: Fixed conformance and artifacts
         run: |
           out="${RUNNER_TEMP}/gooo-counterexample-guided-rewriter-${GITHUB_RUN_ID}"
