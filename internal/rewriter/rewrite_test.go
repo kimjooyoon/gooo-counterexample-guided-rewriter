@@ -59,7 +59,7 @@ func TestReasonAndEffectDriftAreRefuted(t *testing.T) {
 		t.Fatalf("got %s, want REFUTED", report.Decision)
 	}
 	for _, result := range results {
-		if result.Operator == "reason-preserving-branch-split" && !result.Refuted {
+		if result.Artifact.Operator == "reason-preserving-branch-split" && !result.Refuted {
 			t.Fatal("reason drift candidate was not refuted")
 		}
 	}

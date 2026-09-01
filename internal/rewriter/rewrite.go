@@ -2,7 +2,6 @@ package rewriter
 
 import (
 	"errors"
-	"fmt"
 )
 
 type CandidateResult struct {
