@@ -28,6 +28,22 @@
       "blocked_by": ["actions-run-artifact-retention"]
     }
   },
+  "failed_v0_1_4_attempt": {
+    "tag": "v0.1.4",
+    "run_id": 33628688941,
+    "run_conclusion": "failure",
+    "commit": "3cf1b3ea939132ce46383b5dcf0585e637827a6e",
+    "artifact_ids": null,
+    "artifact_evidence": {
+      "state": "UNKNOWN",
+      "stage": "HISTORY",
+      "step": "OBSERVE_FAILED_RUN_ARTIFACTS",
+      "reason": "the release guard stopped before generated output existed and the failed run exposes no retained Actions artifacts",
+      "unknown_class": "ARTIFACTS_UNAVAILABLE",
+      "next_operation": "PRESERVE_ANY_RETAINED_FAILED_RUN_ARTIFACTS",
+      "blocked_by": ["actions-run-artifact-retention", "release-lineage-guard"]
+    }
+  },
   "other_failed_v0_1_3_attempts": [
     {
       "run_id": 33621827097,
