@@ -93,7 +93,7 @@ jobs:
             --argjson cache_misses "$cache_misses" \
             --argjson cache_unknown "$cache_unknown" \
             '{schema:$schema,status:$status,run_id:($run_id|tonumber),commit:$commit,runner:$runner,build_ms:$build_ms,test_ms:$test_ms,conformance_ms:$conformance_ms,wall_ms:$wall_ms,peak_rss_kib:$peak_rss_kib,cache_provider:"actions/cache",cache_hits:$cache_hits,cache_misses:$cache_misses,cache_unknown:$cache_unknown}' \
-            "$timing/actions-metrics.json"
+            > "$timing/actions-metrics.json"
           bash scripts/write-release-evidence.sh "$out" "$timing/actions-metrics.json" docs/operational-incident-tag-reuse-receipt.json "$GITHUB_REF_NAME" "$GITHUB_SHA"
       - name: Preserve release evidence
         if: always()
