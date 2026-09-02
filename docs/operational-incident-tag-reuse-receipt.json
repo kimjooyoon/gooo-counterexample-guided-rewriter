@@ -60,6 +60,22 @@
       "blocked_by": ["actions-run-artifact-retention", "release-timing-directory"]
     }
   },
+  "failed_v0_1_6_attempt": {
+    "tag": "v0.1.6",
+    "run_id": 33629309004,
+    "run_conclusion": "failure",
+    "commit": "6a926a584421d0afcf23f030246caefddf5e0072",
+    "artifact_ids": null,
+    "artifact_evidence": {
+      "state": "UNKNOWN",
+      "stage": "HISTORY",
+      "step": "OBSERVE_FAILED_RUN_ARTIFACTS",
+      "reason": "the Actions metrics file was not written and the failed run exposes no retained Actions artifacts",
+      "unknown_class": "ARTIFACTS_UNAVAILABLE",
+      "next_operation": "PRESERVE_ANY_RETAINED_FAILED_RUN_ARTIFACTS",
+      "blocked_by": ["actions-run-artifact-retention", "actions-metrics-output"]
+    }
+  },
   "other_failed_v0_1_3_attempts": [
     {
       "run_id": 33621827097,
