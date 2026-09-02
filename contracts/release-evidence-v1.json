@@ -1,0 +1,32 @@
+{
+  "schema": "gooo/counterexample-guided-rewriter/release-evidence/v1",
+  "authority": "github-actions",
+  "required": [
+    "release", "historical_preservation", "conformance", "semantic_metrics",
+    "metrics", "actions_metrics", "case_mappings", "unknown_records", "improvement", "runtime_contract"
+  ],
+  "case_mapping": {
+    "total": 12,
+    "proof_choices": {"FOUNDATION": 4, "COHERENCE": 4, "REGRESSION": 4},
+    "indicator_classes": {"DRIVER": 4, "OUTCOME": 4, "GUARDRAIL": 4}
+  },
+  "unknown_record_fields": ["stage", "step", "reason", "unknown_class", "next_operation", "blocked_by"],
+  "actions_metric_fields": {
+    "integer_or_null": ["build_ms", "test_ms", "wall_ms", "peak_rss_kib", "cache_hits", "cache_misses"],
+    "nullable_requires": "UNKNOWN record"
+  },
+  "improvement": "null_or_UNKNOWN_without_identity_matched_before_after_pair",
+  "historical_policy": {
+    "immutable_v0_1_3_preserved": true,
+    "failed_runs_and_artifacts_preserved": true,
+    "tag_deleted_and_version_reused_is_refuted": true,
+    "release_creation": "draft-first",
+    "release_assets": "append-only"
+  },
+  "runtime_contract": {
+    "repository_writes": 0,
+    "local_test_executions": 0,
+    "cross_project_required_gates": 0,
+    "auto_apply": false
+  }
+}

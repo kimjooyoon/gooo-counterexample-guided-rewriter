@@ -23,6 +23,8 @@ type CandidateSource struct {
 	RuleDigest          string
 	EvaluatorID         string
 	EvaluatorDigest     string
+	ProofChoice         string
+	IndicatorClass      string
 	InputIRDigest       string
 	TransformedIRDigest string
 }
@@ -46,7 +48,7 @@ func CompileCandidate(goooPath, irPath string) (CandidateArtifact, error) {
 	if err := artifact.Validate(); err != nil {
 		return CandidateArtifact{}, err
 	}
-	if source.CandidateID != artifact.CandidateID || source.Scenario != artifact.Scenario || source.Operator != artifact.Operator || source.Status != artifact.CandidateStatus ||
+	if source.CandidateID != artifact.CandidateID || source.Scenario != artifact.Scenario || source.ProofChoice != artifact.ProofChoice || source.IndicatorClass != artifact.IndicatorClass || source.Operator != artifact.Operator || source.Status != artifact.CandidateStatus ||
 		source.SourceDigest != artifact.SourceDigest || source.OriginSourceDigest != artifact.OriginSourceDigest || source.ContractDigest != artifact.ContractDigest || source.ToolchainDigest != artifact.ToolchainDigest ||
 		source.CandidateSpaceID != artifact.CandidateSpaceID || source.CandidateSpaceDigest != artifact.CandidateSpaceDigest || source.RuleID != artifact.RuleID || source.RuleDigest != artifact.RuleDigest || source.EvaluatorID != artifact.EvaluatorID || source.EvaluatorDigest != artifact.EvaluatorDigest ||
 		source.InputIRDigest != artifact.InputIRDigest || source.TransformedIRDigest != artifact.TransformedIRDigest {
@@ -86,6 +88,7 @@ func parseCandidateSource(path string) (CandidateSource, error) {
 		case tokens[0] == "candidate":
 			values := looseKeyValues(tokens[1:])
 			source.CandidateID, source.Scenario, source.Operator, source.Status = values["id"], values["scenario"], values["operator"], values["status"]
+			source.ProofChoice, source.IndicatorClass = values["proof_choice"], values["indicator_class"]
 		case strings.HasPrefix(tokens[0], "source_digest="):
 			values := looseKeyValues(tokens)
 			source.SourceDigest, source.OriginSourceDigest, source.ContractDigest, source.ToolchainDigest = values["source_digest"], values["origin_source_digest"], values["contract_digest"], values["toolchain_digest"]
@@ -99,7 +102,7 @@ func parseCandidateSource(path string) (CandidateSource, error) {
 			source.InputIRDigest, source.TransformedIRDigest = values["input_ir_digest"], values["transformed_ir_digest"]
 		}
 	}
-	if source.CandidateID == "" || source.Scenario == "" || source.Operator == "" || !allowedDecision(source.Status) {
+	if source.CandidateID == "" || source.Scenario == "" || !allowedProofChoice(source.ProofChoice) || !allowedIndicatorClass(source.IndicatorClass) || source.Operator == "" || !allowedDecision(source.Status) {
 		return CandidateSource{}, errors.New("candidate source declaration is incomplete")
 	}
 	return source, nil

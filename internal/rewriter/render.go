@@ -28,7 +28,8 @@ func RenderCandidateGooo(a CandidateArtifact) string {
 		"gooo candidate_rewrite v1",
 		"",
 		"authority metacode",
-		"candidate id="+a.CandidateID+" scenario="+a.Scenario+" operator="+a.Operator+" status="+a.CandidateStatus,
+		"candidate id="+a.CandidateID+" scenario="+a.Scenario+" operator="+a.Operator+" status="+a.CandidateStatus+" proof_choice="+a.ProofChoice+" indicator_class="+a.IndicatorClass,
+		"semantic_mapping proof_choice="+a.ProofChoice+" indicator_class="+a.IndicatorClass,
 		"source_digest="+a.SourceDigest+" origin_source_digest="+a.OriginSourceDigest+" contract_digest="+a.ContractDigest+" toolchain_digest="+a.ToolchainDigest,
 		"candidate_space_id="+a.CandidateSpaceID+" candidate_space_digest="+a.CandidateSpaceDigest+" rule_id="+a.RuleID+" rule_digest="+a.RuleDigest+" evaluator_id="+a.EvaluatorID+" evaluator_digest="+a.EvaluatorDigest,
 		"input_ir_digest="+a.InputIRDigest+" transformed_ir_digest="+a.TransformedIRDigest,
@@ -77,8 +78,9 @@ func WriteCaseArtifacts(outputDir string, report CaseReport, results []Candidate
 			return err
 		}
 		dossierPath := filepath.Join(caseDir, "candidates", result.Artifact.CandidateID+".dossier.json")
-		dossier := CandidateDossier{
+			dossier := CandidateDossier{
 			Schema: DossierSchema, CandidateID: result.Artifact.CandidateID, Scenario: result.Artifact.Scenario,
+			ProofChoice: result.Artifact.ProofChoice, IndicatorClass: result.Artifact.IndicatorClass,
 			Operator: result.Artifact.Operator, Decision: result.Summary.Decision, CandidateStatus: result.Artifact.CandidateStatus,
 			CandidateSpaceID: result.Artifact.CandidateSpaceID, CandidateSpaceDigest: result.Artifact.CandidateSpaceDigest,
 			RuleID: result.Artifact.RuleID, RuleDigest: result.Artifact.RuleDigest,
@@ -101,11 +103,16 @@ func WriteCaseArtifacts(outputDir string, report CaseReport, results []Candidate
 }
 
 func BuildConformance(meta MetaContract, metaRaw []byte, reports []CaseReport) ConformanceReport {
-	result := ConformanceReport{Schema: ConformanceSchema, Authority: meta.Authority, MetaDigest: Digest(metaRaw), Decision: DecisionClosed, Scenarios: len(reports), Cells: len(reports), ProofCounts: DecisionCounts{}, IndicatorCounts: DecisionCounts{}, PairedIndicatorVector: []string{}, ExternalUtilityUnknown: 0, RepositoryWrites: 0, LocalTestExecutions: 0, CrossProjectRequiredGates: meta.CrossProjectGate, Cases: []ConformanceCase{}}
+	result := ConformanceReport{Schema: ConformanceSchema, Authority: meta.Authority, MetaDigest: Digest(metaRaw), Decision: DecisionClosed, Scenarios: len(reports), Cells: len(reports), ProofCounts: DecisionCounts{}, IndicatorCounts: DecisionCounts{}, PairedIndicatorVector: []string{}, ProofChoiceCounts: map[string]int{}, IndicatorClassCounts: map[string]int{}, UnknownRecords: []UnknownCaseEvidence{}, ExternalUtilityUnknown: 0, RepositoryWrites: 0, LocalTestExecutions: 0, CrossProjectRequiredGates: meta.CrossProjectGate, Cases: []ConformanceCase{}}
 	for _, report := range reports {
 		pass := report.Decision == report.ExpectedDecision
-		result.Cases = append(result.Cases, ConformanceCase{Scenario: report.Scenario, Expected: report.ExpectedDecision, Observed: report.Decision, Pass: pass})
+		result.Cases = append(result.Cases, ConformanceCase{Scenario: report.Scenario, Expected: report.ExpectedDecision, Observed: report.Decision, ProofChoice: report.ProofChoice, IndicatorClass: report.IndicatorClass, Unknown: cloneUnknown(report.Unknown), Pass: pass})
 		result.PairedIndicatorVector = append(result.PairedIndicatorVector, report.Scenario+"="+strings.Join(report.PairedIndicatorVector, "|"))
+		result.ProofChoiceCounts[report.ProofChoice]++
+		result.IndicatorClassCounts[report.IndicatorClass]++
+		if report.Unknown != nil {
+			result.UnknownRecords = append(result.UnknownRecords, UnknownCaseEvidence{Scenario: report.Scenario, Record: *cloneUnknown(report.Unknown)})
+		}
 		if report.Unknown != nil && report.Unknown.UnknownClass == "EXTERNAL_UTILITY_UNKNOWN" {
 			result.ExternalUtilityUnknown++
 		}
@@ -130,19 +137,90 @@ func BuildConformance(meta MetaContract, metaRaw []byte, reports []CaseReport) C
 	return result
 }
 
+func BuildSemanticMetricsDossier(meta MetaContract, metaRaw []byte, reports []CaseReport) SemanticMetricsDossier {
+	conformance := BuildConformance(meta, metaRaw, reports)
+	proofChoices := make([]SemanticMetricCount, 0, len(requiredProofChoices))
+	for _, choice := range requiredProofChoices {
+		count := SemanticMetricCount{Name: choice}
+		for _, testCase := range conformance.Cases {
+			if testCase.ProofChoice != choice {
+				continue
+			}
+			count.Total++
+			switch testCase.Observed {
+			case DecisionClosed:
+				count.Closed++
+			case DecisionUnknown:
+				count.Unknown++
+			case DecisionRefuted:
+				count.Refuted++
+			}
+		}
+		proofChoices = append(proofChoices, count)
+	}
+	indicatorClasses := make([]SemanticMetricCount, 0, len(requiredIndicatorClasses))
+	for _, class := range requiredIndicatorClasses {
+		count := SemanticMetricCount{Name: class}
+		for _, testCase := range conformance.Cases {
+			if testCase.IndicatorClass != class {
+				continue
+			}
+			count.Total++
+			switch testCase.Observed {
+			case DecisionClosed:
+				count.Closed++
+			case DecisionUnknown:
+				count.Unknown++
+			case DecisionRefuted:
+				count.Refuted++
+			}
+		}
+		indicatorClasses = append(indicatorClasses, count)
+	}
+	return SemanticMetricsDossier{
+		Schema: SemanticMetricsSchema, MetaDigest: Digest(metaRaw), Denominator: meta.Denominator.Scenarios,
+		ProofChoices: proofChoices, IndicatorClasses: indicatorClasses, Cases: conformance.Cases,
+		UnknownRecords: conformance.UnknownRecords, PairedIndicatorVector: conformance.PairedIndicatorVector,
+		Improvement: unknownImprovement("no exact same-scenario source contract toolchain runner metric pair was supplied"),
+		RepositoryWrites: conformance.RepositoryWrites, LocalTestExecutions: conformance.LocalTestExecutions,
+		CrossProjectRequiredGates: conformance.CrossProjectRequiredGates,
+	}
+}
+
 func ValidateConformance(report ConformanceReport, meta MetaContract) error {
 	if report.Schema != ConformanceSchema || report.Scenarios != meta.Denominator.Scenarios || report.Cells != 12 || len(report.Cases) != meta.Denominator.Scenarios || len(report.PairedIndicatorVector) != 12 || report.RepositoryWrites != 0 || report.LocalTestExecutions != 0 || report.CrossProjectRequiredGates != 0 {
 		return errors.New("conformance report does not match the .gooo denominator or input boundary")
 	}
-	if report.Closed != 4 || report.Unknown != 4 || report.Refuted != 4 || report.ProofCounts != meta.ProofCounts || report.IndicatorCounts != meta.IndicatorCounts {
+	if report.Closed != 4 || report.Unknown != 4 || report.Refuted != 4 || report.ProofCounts != meta.ProofCounts || report.IndicatorCounts != meta.IndicatorCounts || !sameCounts(report.ProofChoiceCounts, map[string]int{"FOUNDATION": 4, "COHERENCE": 4, "REGRESSION": 4}) || !sameCounts(report.IndicatorClassCounts, map[string]int{"DRIVER": 4, "OUTCOME": 4, "GUARDRAIL": 4}) || len(report.UnknownRecords) != 4 {
 		return errors.New("conformance report does not match the declared 4/4/4 proof and indicator contract")
 	}
 	for _, testCase := range report.Cases {
+		scenario, err := meta.Scenario(testCase.Scenario)
+		if err != nil || testCase.ProofChoice != scenario.ProofChoice || testCase.IndicatorClass != scenario.IndicatorClass {
+			return fmt.Errorf("case %q semantic mapping does not match .gooo", testCase.Scenario)
+		}
 		if !testCase.Pass {
 			return fmt.Errorf("fixed case %q observed %s, expected %s", testCase.Scenario, testCase.Observed, testCase.Expected)
 		}
 	}
+	for _, unknownCase := range report.UnknownRecords {
+		if unknownCase.Scenario == "" || unknownCase.Record.Stage == "" || unknownCase.Record.Step == "" || unknownCase.Record.Reason == "" || unknownCase.Record.UnknownClass == "" || unknownCase.Record.NextOperation == "" || len(unknownCase.Record.BlockedBy) == 0 {
+			return fmt.Errorf("UNKNOWN record for %q is incomplete", unknownCase.Scenario)
+		}
+	}
 	return nil
+}
+
+func sameCounts(left, right map[string]int) bool {
+	if len(left) != len(right) {
+		return false
+	}
+	for key, value := range right {
+		if left[key] != value {
+			return false
+		}
+	}
+	return true
 }
 
 type fileSnapshot map[string]string

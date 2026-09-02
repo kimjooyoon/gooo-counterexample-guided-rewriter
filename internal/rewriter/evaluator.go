@@ -12,12 +12,14 @@ func EvaluateBeforeAfter(meta MetaContract, c Counterexample, operator OperatorD
 		ToolchainDigest: c.ToolchainDigest, EvaluatorID: c.EvaluatorID, EvaluatorDigest: c.EvaluatorDigest,
 	}
 	result := EvaluationResult{
-		Schema: EvaluationSchema, Identity: identity, IdentityMatch: exactEvaluationIdentity(meta, c, before, after),
+		Schema: EvaluationSchema, ProofChoice: before.ProofChoice, IndicatorClass: before.IndicatorClass, Identity: identity, IdentityMatch: exactEvaluationIdentity(meta, c, before, after),
 		CausalInputID: c.CausalInput.ID, CounterexampleRemoved: removed, CorpusPreserved: true,
 		Evidence: []CorpusEvidence{}, PairedIndicator: []string{},
 	}
+	result.Improvement = unknownImprovement("no exact same-scenario source contract toolchain runner metric pair was supplied")
 	if !result.IdentityMatch {
 		result.Unknown = unknown("evaluate", "pair_before_after", "before and after do not share the exact fixture, source, contract, toolchain, and evaluator identity", "IDENTITY_MISMATCH", "recreate_paired_evaluation", "fixture-source-contract-toolchain-evaluator")
+		result.Improvement = unknownImprovement("identity-matched before/after pair is required before claiming improvement")
 		return result
 	}
 
@@ -73,9 +75,16 @@ func EvaluateBeforeAfter(meta MetaContract, c Counterexample, operator OperatorD
 	return result
 }
 
+func unknownImprovement(reason string) *ImprovementEvidence {
+	return &ImprovementEvidence{
+		Status: "UNKNOWN", Before: nil, After: nil, Delta: nil, Reason: reason,
+		Unknown: unknown("improvement", "compare_exact_before_after", "exact same-scope before/after metric pair is unavailable", "MISSING_EXACT_PAIR", "provide_same_scenario_source_contract_toolchain_runner_pair", "scenario-source-contract-fixture-toolchain-runner"),
+	}
+}
+
 func exactEvaluationIdentity(meta MetaContract, c Counterexample, before, after SemanticIR) bool {
 	return c.ContractDigest != "" && c.ContractDigest == meta.ContractDigest && c.EvaluatorID == meta.Evaluator.ID && c.EvaluatorDigest == meta.Evaluator.Digest &&
-		before.Scenario == c.Scenario && after.Scenario == c.Scenario && before.OriginSourceDigest == c.OriginSourceDigest && after.OriginSourceDigest == c.OriginSourceDigest &&
+		before.Scenario == c.Scenario && after.Scenario == c.Scenario && before.ProofChoice == after.ProofChoice && before.IndicatorClass == after.IndicatorClass && before.OriginSourceDigest == c.OriginSourceDigest && after.OriginSourceDigest == c.OriginSourceDigest &&
 		before.ContractDigest == c.ContractDigest && after.ContractDigest == c.ContractDigest && before.ToolchainDigest == c.ToolchainDigest && after.ToolchainDigest == c.ToolchainDigest &&
 		before.CandidateSpaceID == meta.CandidateSpace.ID && after.CandidateSpaceID == meta.CandidateSpace.ID && before.CandidateSpaceDigest == meta.CandidateSpace.Digest && after.CandidateSpaceDigest == meta.CandidateSpace.Digest &&
 		before.RuleID == meta.Rule.ID && after.RuleID == meta.Rule.ID && before.RuleDigest == meta.Rule.Digest && after.RuleDigest == meta.Rule.Digest &&

@@ -53,15 +53,15 @@ meta_activity ordinal=10 id=cell-refuted-effect kind=cell expected=REFUTED
 meta_activity ordinal=11 id=cell-refuted-hidden kind=cell expected=REFUTED
 meta_activity ordinal=12 id=cell-refuted-regression kind=cell expected=REFUTED
 
-scenario ordinal=1 id=closed-guard-insertion fixture=fixtures/cases/closed-guard-insertion.json expected=CLOSED
-scenario ordinal=2 id=closed-effect-narrowing fixture=fixtures/cases/closed-effect-narrowing.json expected=CLOSED
-scenario ordinal=3 id=closed-branch-split fixture=fixtures/cases/closed-branch-split.json expected=CLOSED
-scenario ordinal=4 id=replay-closed fixture=fixtures/cases/replay-closed.json expected=CLOSED
-scenario ordinal=5 id=ambiguous-equal-candidates fixture=fixtures/cases/ambiguous-equal-candidates.json expected=UNKNOWN
-scenario ordinal=6 id=missing-origin fixture=fixtures/cases/missing-origin.json expected=UNKNOWN
-scenario ordinal=7 id=missing-identity fixture=fixtures/cases/missing-identity.json expected=UNKNOWN
-scenario ordinal=8 id=external-utility-unknown fixture=fixtures/cases/external-utility-unknown.json expected=UNKNOWN
-scenario ordinal=9 id=reason-drift fixture=fixtures/cases/reason-drift.json expected=REFUTED
-scenario ordinal=10 id=effect-drift fixture=fixtures/cases/effect-drift.json expected=REFUTED
-scenario ordinal=11 id=hidden-counterexample fixture=fixtures/cases/hidden-counterexample.json expected=REFUTED
-scenario ordinal=12 id=normal-regression fixture=fixtures/cases/normal-regression.json expected=REFUTED
+scenario ordinal=1 id=closed-guard-insertion fixture=fixtures/cases/closed-guard-insertion.json expected=CLOSED proof_choice=FOUNDATION indicator_class=DRIVER
+scenario ordinal=2 id=closed-effect-narrowing fixture=fixtures/cases/closed-effect-narrowing.json expected=CLOSED proof_choice=FOUNDATION indicator_class=DRIVER
+scenario ordinal=3 id=closed-branch-split fixture=fixtures/cases/closed-branch-split.json expected=CLOSED proof_choice=FOUNDATION indicator_class=OUTCOME
+scenario ordinal=4 id=replay-closed fixture=fixtures/cases/replay-closed.json expected=CLOSED proof_choice=FOUNDATION indicator_class=GUARDRAIL
+scenario ordinal=5 id=ambiguous-equal-candidates fixture=fixtures/cases/ambiguous-equal-candidates.json expected=UNKNOWN proof_choice=COHERENCE indicator_class=DRIVER
+scenario ordinal=6 id=missing-origin fixture=fixtures/cases/missing-origin.json expected=UNKNOWN proof_choice=COHERENCE indicator_class=GUARDRAIL
+scenario ordinal=7 id=missing-identity fixture=fixtures/cases/missing-identity.json expected=UNKNOWN proof_choice=COHERENCE indicator_class=DRIVER
+scenario ordinal=8 id=external-utility-unknown fixture=fixtures/cases/external-utility-unknown.json expected=UNKNOWN proof_choice=COHERENCE indicator_class=GUARDRAIL
+scenario ordinal=9 id=reason-drift fixture=fixtures/cases/reason-drift.json expected=REFUTED proof_choice=REGRESSION indicator_class=OUTCOME
+scenario ordinal=10 id=effect-drift fixture=fixtures/cases/effect-drift.json expected=REFUTED proof_choice=REGRESSION indicator_class=OUTCOME
+scenario ordinal=11 id=hidden-counterexample fixture=fixtures/cases/hidden-counterexample.json expected=REFUTED proof_choice=REGRESSION indicator_class=GUARDRAIL
+scenario ordinal=12 id=normal-regression fixture=fixtures/cases/normal-regression.json expected=REFUTED proof_choice=REGRESSION indicator_class=OUTCOME

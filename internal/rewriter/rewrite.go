@@ -15,8 +15,13 @@ type CandidateResult struct {
 func GenerateCase(meta MetaContract, counterexample Counterexample) (CaseReport, []CandidateResult, error) {
 	baseIR := counterexample.ReducedGraph.ToIR(counterexample)
 	baseIR.ContractDigest = meta.ContractDigest
+	if scenario, err := meta.Scenario(counterexample.Scenario); err == nil {
+		baseIR.ProofChoice = scenario.ProofChoice
+		baseIR.IndicatorClass = scenario.IndicatorClass
+	}
 	report := CaseReport{
 		Schema: CaseReportSchema, Scenario: counterexample.Scenario, ExpectedDecision: "",
+		ProofChoice: baseIR.ProofChoice, IndicatorClass: baseIR.IndicatorClass,
 		SourceDigest: counterexample.SourceDigest, OriginSourceDigest: counterexample.OriginSourceDigest,
 		ToolchainDigest: counterexample.ToolchainDigest, InputIRDigest: baseIR.CanonicalDigest(),
 		Baseline: counterexample.Baseline.Normalized(), TargetTerminal: counterexample.TargetTerminal.Normalized(),
@@ -100,7 +105,7 @@ func buildCandidate(meta MetaContract, c Counterexample, baseIR SemanticIR, oper
 	candidateID := c.Scenario + "--" + operator.ID
 	inputDigest := baseIR.CanonicalDigest()
 	artifact := CandidateArtifact{
-		Schema: CandidateSchema, CandidateID: candidateID, Scenario: c.Scenario, Operator: operator.ID,
+		Schema: CandidateSchema, CandidateID: candidateID, Scenario: c.Scenario, ProofChoice: baseIR.ProofChoice, IndicatorClass: baseIR.IndicatorClass, Operator: operator.ID,
 		CandidateStatus: DecisionUnknown, SourceDigest: c.SourceDigest, OriginSourceDigest: c.OriginSourceDigest,
 		ContractDigest: meta.ContractDigest, ToolchainDigest: c.ToolchainDigest,
 		CandidateSpaceID: c.CandidateSpaceID, CandidateSpaceDigest: c.CandidateSpaceDigest, RuleID: c.RuleID, RuleDigest: c.RuleDigest,
@@ -123,7 +128,7 @@ func buildCandidate(meta MetaContract, c Counterexample, baseIR SemanticIR, oper
 		artifact.Unknown = unknown("search", "check_"+operator.ID, "operator precondition was not observed in the minimized typed graph", "PRECONDITION_NOT_MET", "inspect_next_declared_operator", operator.ID)
 		artifact.Preconditions = appendRequiredPredicates(artifact.Preconditions, inputDigest, false, artifact.CounterexampleVisible, false, false, "not applicable")
 		artifact.CounterexampleReplay = replay(c, baseIR.Terminal, artifact.CounterexampleVisible, meta.ReplayReplays)
-		artifact.Evaluation = EvaluationResult{Schema: EvaluationSchema, CorpusPreserved: false, PairedIndicator: []string{}}
+		artifact.Evaluation = EvaluationResult{Schema: EvaluationSchema, ProofChoice: baseIR.ProofChoice, IndicatorClass: baseIR.IndicatorClass, CorpusPreserved: false, PairedIndicator: []string{}, Improvement: unknownImprovement("operator did not produce a pair eligible for improvement measurement")}
 		return candidateResult(artifact, false, false)
 	}
 
@@ -226,8 +231,9 @@ func blockedPredicates(inputDigest string, visible bool, detail string) []Predic
 func blockedEvaluation(meta MetaContract, c Counterexample, base SemanticIR, blocked *UnknownRecord) EvaluationResult {
 	return EvaluationResult{
 		Schema: EvaluationSchema,
+		ProofChoice: base.ProofChoice, IndicatorClass: base.IndicatorClass,
 		Identity: EvaluationIdentity{Fixture: c.Scenario, SourceDigest: c.SourceDigest, ContractDigest: c.ContractDigest, ToolchainDigest: c.ToolchainDigest, EvaluatorID: c.EvaluatorID, EvaluatorDigest: c.EvaluatorDigest},
-		IdentityMatch: false, CausalInputID: c.CausalInput.ID, CorpusPreserved: false, Evidence: []CorpusEvidence{}, PairedIndicator: []string{}, Unknown: cloneUnknown(blocked),
+		IdentityMatch: false, CausalInputID: c.CausalInput.ID, CorpusPreserved: false, Evidence: []CorpusEvidence{}, PairedIndicator: []string{}, Improvement: unknownImprovement("exact same-scope before/after metric pair is unavailable because evaluation identity is incomplete"), Unknown: cloneUnknown(blocked),
 	}
 }
 
@@ -426,7 +432,7 @@ func candidateResult(artifact CandidateArtifact, accepted, refuted bool) Candida
 		decision = DecisionRefuted
 	}
 	return CandidateResult{Artifact: artifact, Accepted: accepted, Refuted: refuted, Summary: CandidateSummary{
-		CandidateID: artifact.CandidateID, Operator: artifact.Operator, Status: artifact.CandidateStatus, Decision: decision,
+		CandidateID: artifact.CandidateID, Operator: artifact.Operator, ProofChoice: artifact.ProofChoice, IndicatorClass: artifact.IndicatorClass, Status: artifact.CandidateStatus, Decision: decision,
 		Accepted: accepted, Refuted: refuted, TransformedIRDigest: artifact.TransformedIRDigest,
 		AffectedSemanticIDs: cloneStrings(artifact.AffectedSemanticIDs),
 		ArtifactGooo: "candidates/" + artifact.CandidateID + ".gooo", ArtifactIR: "candidates/" + artifact.CandidateID + ".ir.json",
@@ -448,10 +454,10 @@ func cloneUnknown(value *UnknownRecord) *UnknownRecord {
 }
 
 func (a CandidateArtifact) Validate() error {
-	if a.Schema != CandidateSchema || a.CandidateID == "" || a.Scenario == "" || a.Operator == "" || !allowedDecision(a.CandidateStatus) {
+	if a.Schema != CandidateSchema || a.CandidateID == "" || a.Scenario == "" || !allowedProofChoice(a.ProofChoice) || !allowedIndicatorClass(a.IndicatorClass) || a.Operator == "" || !allowedDecision(a.CandidateStatus) {
 		return errors.New("candidate artifact identity or status is incomplete")
 	}
-	if !validDigest(a.SourceDigest) || !validDigest(a.ToolchainDigest) || a.IR.Scenario != a.Scenario {
+	if !validDigest(a.SourceDigest) || !validDigest(a.ToolchainDigest) || a.IR.Scenario != a.Scenario || a.IR.ProofChoice != a.ProofChoice || a.IR.IndicatorClass != a.IndicatorClass {
 		return errors.New("candidate provenance is incomplete")
 	}
 	if a.CandidateStatus != DecisionUnknown {

@@ -7,6 +7,8 @@ meta="$repo_root/.gooo/rewrite.gooo"
 test "$(grep -c '^operator ' "$meta")" -eq 3
 test "$(grep -c '^scenario ' "$meta")" -eq 12
 test "$(grep -c '^meta_activity ' "$meta")" -eq 12
+test "$(grep -c 'proof_choice=' "$meta")" -eq 12
+test "$(grep -c 'indicator_class=' "$meta")" -eq 12
 test "$(grep -c '^predicate ' "$meta")" -eq 10
 grep -q '^authority metacode$' "$meta"
 grep -q '^search bound=1 ' "$meta"
@@ -26,6 +28,8 @@ grep -q -- '--draft' "$repo_root/.github/workflows/release.yml"
 grep -q 'verify-release-lineage.sh' "$repo_root/.github/workflows/release.yml"
 test -f "$repo_root/docs/operational-incidents.json"
 grep -q 'PR_FIRST_BYPASSED' "$repo_root/docs/operational-incidents.json"
+test -f "$repo_root/docs/operational-incident-tag-reuse-receipt.json"
+grep -q 'TAG_DELETED_AND_VERSION_REUSED' "$repo_root/docs/operational-incident-tag-reuse-receipt.json"
 if grep -nE 'release delete|tag -f|--force|--clobber' "$repo_root/.github/workflows"; then
 	echo 'public release deletion, retagging, or overwrite is forbidden' >&2
 	exit 1

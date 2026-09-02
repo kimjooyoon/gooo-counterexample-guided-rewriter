@@ -20,6 +20,7 @@ const (
 	CaseReportSchema     = "gooo/counterexample-guided-rewriter/case-report/v1"
 	ConformanceSchema    = "gooo/counterexample-guided-rewriter/conformance/v1"
 	MetricsSchema        = "gooo/counterexample-guided-rewriter/metrics/v1"
+	SemanticMetricsSchema = "gooo/counterexample-guided-rewriter/semantic-metrics-dossier/v1"
 	DossierSchema        = "gooo/counterexample-guided-rewriter/candidate-dossier/v1"
 	PatchSchema          = "gooo/counterexample-guided-rewriter/patch/v1"
 	EvaluationSchema     = "gooo/counterexample-guided-rewriter/evaluation/v1"
@@ -32,6 +33,8 @@ const (
 var requiredUnknownFields = []string{"stage", "step", "reason", "unknown_class", "next_operation", "blocked_by"}
 var requiredOperators = []string{"guard-insertion", "effect-narrowing", "reason-preserving-branch-split"}
 var requiredPredicates = []string{"precondition", "origin-digest", "ir-digest", "semantic-ids", "terminal-reason", "effect-trace", "replay", "visibility", "corpus-preserved", "identity"}
+var requiredProofChoices = []string{"FOUNDATION", "COHERENCE", "REGRESSION"}
+var requiredIndicatorClasses = []string{"DRIVER", "OUTCOME", "GUARDRAIL"}
 
 type MetaContract struct {
 	Schema           string
@@ -141,10 +144,12 @@ type DecisionCounts struct {
 }
 
 type ScenarioDecl struct {
-	Ordinal  int    `json:"ordinal"`
-	ID       string `json:"id"`
-	Fixture  string `json:"fixture"`
-	Expected string `json:"expected"`
+	Ordinal        int    `json:"ordinal"`
+	ID             string `json:"id"`
+	Fixture        string `json:"fixture"`
+	Expected       string `json:"expected"`
+	ProofChoice    string `json:"proof_choice"`
+	IndicatorClass string `json:"indicator_class"`
 }
 
 type CausalInput struct {
@@ -207,20 +212,22 @@ type GraphEdge struct {
 }
 
 type SemanticIR struct {
-	Schema             string        `json:"schema"`
-	Scenario           string        `json:"scenario"`
-	OriginSourceDigest string        `json:"origin_source_digest"`
-	ContractDigest     string        `json:"contract_digest"`
-	ToolchainDigest    string        `json:"toolchain_digest"`
-	CandidateSpaceID   string        `json:"candidate_space_id"`
-	CandidateSpaceDigest string      `json:"candidate_space_digest"`
-	RuleID             string        `json:"rule_id"`
-	RuleDigest         string        `json:"rule_digest"`
-	EvaluatorID        string        `json:"evaluator_id"`
-	EvaluatorDigest    string        `json:"evaluator_digest"`
-	Nodes              []GraphNode   `json:"nodes"`
-	Edges              []GraphEdge   `json:"edges"`
-	Terminal           TerminalTrace `json:"terminal"`
+	Schema               string        `json:"schema"`
+	Scenario             string        `json:"scenario"`
+	ProofChoice          string        `json:"proof_choice"`
+	IndicatorClass       string        `json:"indicator_class"`
+	OriginSourceDigest   string        `json:"origin_source_digest"`
+	ContractDigest       string        `json:"contract_digest"`
+	ToolchainDigest      string        `json:"toolchain_digest"`
+	CandidateSpaceID     string        `json:"candidate_space_id"`
+	CandidateSpaceDigest string        `json:"candidate_space_digest"`
+	RuleID               string        `json:"rule_id"`
+	RuleDigest           string        `json:"rule_digest"`
+	EvaluatorID          string        `json:"evaluator_id"`
+	EvaluatorDigest      string        `json:"evaluator_digest"`
+	Nodes                []GraphNode   `json:"nodes"`
+	Edges                []GraphEdge   `json:"edges"`
+	Terminal             TerminalTrace `json:"terminal"`
 }
 
 type ReplayEvidence struct {
@@ -291,17 +298,29 @@ type EvaluationIdentity struct {
 }
 
 type EvaluationResult struct {
-	Schema             string             `json:"schema"`
-	Identity           EvaluationIdentity `json:"identity"`
-	IdentityMatch      bool               `json:"identity_match"`
-	CausalInputID      string             `json:"causal_input_id"`
-	CounterexampleRemoved bool            `json:"counterexample_removed"`
-	CorpusPreserved    bool               `json:"corpus_preserved"`
-	KnownContradiction bool               `json:"known_contradiction"`
-	Contradiction      string             `json:"contradiction,omitempty"`
-	Evidence           []CorpusEvidence   `json:"evidence"`
-	PairedIndicator    []string           `json:"paired_indicator"`
-	Unknown            *UnknownRecord     `json:"unknown,omitempty"`
+	Schema                string                `json:"schema"`
+	ProofChoice           string                `json:"proof_choice"`
+	IndicatorClass        string                `json:"indicator_class"`
+	Identity              EvaluationIdentity    `json:"identity"`
+	IdentityMatch         bool                  `json:"identity_match"`
+	CausalInputID         string                `json:"causal_input_id"`
+	CounterexampleRemoved bool                  `json:"counterexample_removed"`
+	CorpusPreserved       bool                  `json:"corpus_preserved"`
+	KnownContradiction    bool                  `json:"known_contradiction"`
+	Contradiction         string                `json:"contradiction,omitempty"`
+	Evidence              []CorpusEvidence      `json:"evidence"`
+	PairedIndicator       []string              `json:"paired_indicator"`
+	Improvement           *ImprovementEvidence  `json:"improvement"`
+	Unknown               *UnknownRecord        `json:"unknown,omitempty"`
+}
+
+type ImprovementEvidence struct {
+	Status  string         `json:"status"`
+	Before  *int64         `json:"before"`
+	After   *int64         `json:"after"`
+	Delta   *int64         `json:"delta"`
+	Reason  string         `json:"reason"`
+	Unknown *UnknownRecord `json:"unknown,omitempty"`
 }
 
 type PatchOperation struct {
@@ -328,6 +347,8 @@ type CandidateDossier struct {
 	Schema            string            `json:"schema"`
 	CandidateID       string            `json:"candidate_id"`
 	Scenario          string            `json:"scenario"`
+	ProofChoice       string            `json:"proof_choice"`
+	IndicatorClass    string            `json:"indicator_class"`
 	Operator          string            `json:"operator"`
 	Decision          string            `json:"decision"`
 	CandidateStatus   string            `json:"candidate_status"`
@@ -356,6 +377,8 @@ type CandidateArtifact struct {
 	Schema                string            `json:"schema"`
 	CandidateID           string            `json:"candidate_id"`
 	Scenario              string            `json:"scenario"`
+	ProofChoice           string            `json:"proof_choice"`
+	IndicatorClass        string            `json:"indicator_class"`
 	Operator              string            `json:"operator"`
 	CandidateStatus       string            `json:"candidate_status"`
 	SourceDigest          string            `json:"source_digest"`
@@ -387,6 +410,8 @@ type CandidateArtifact struct {
 type CandidateSummary struct {
 	CandidateID         string   `json:"candidate_id"`
 	Operator            string   `json:"operator"`
+	ProofChoice         string   `json:"proof_choice"`
+	IndicatorClass      string   `json:"indicator_class"`
 	Status              string   `json:"status"`
 	Decision            string   `json:"decision"`
 	Accepted            bool     `json:"accepted"`
@@ -402,6 +427,8 @@ type CandidateSummary struct {
 type CaseReport struct {
 	Schema               string             `json:"schema"`
 	Scenario             string             `json:"scenario"`
+	ProofChoice          string             `json:"proof_choice"`
+	IndicatorClass       string             `json:"indicator_class"`
 	Decision             string             `json:"decision"`
 	ExpectedDecision     string             `json:"expected_decision"`
 	SourceDigest         string             `json:"source_digest"`
@@ -424,10 +451,13 @@ type CaseReport struct {
 }
 
 type ConformanceCase struct {
-	Scenario string `json:"scenario"`
-	Expected string `json:"expected"`
-	Observed string `json:"observed"`
-	Pass     bool   `json:"pass"`
+	Scenario       string         `json:"scenario"`
+	Expected       string         `json:"expected"`
+	Observed       string         `json:"observed"`
+	ProofChoice    string         `json:"proof_choice"`
+	IndicatorClass string         `json:"indicator_class"`
+	Unknown        *UnknownRecord `json:"unknown,omitempty"`
+	Pass           bool           `json:"pass"`
 }
 
 type ConformanceReport struct {
@@ -443,11 +473,42 @@ type ConformanceReport struct {
 	ProofCounts      DecisionCounts    `json:"proof_counts"`
 	IndicatorCounts  DecisionCounts    `json:"indicator_counts"`
 	PairedIndicatorVector []string      `json:"paired_indicator_vector"`
+	ProofChoiceCounts    map[string]int `json:"proof_choice_counts"`
+	IndicatorClassCounts map[string]int `json:"indicator_class_counts"`
+	UnknownRecords       []UnknownCaseEvidence `json:"unknown_records"`
 	ExternalUtilityUnknown int          `json:"external_utility_unknown"`
 	RepositoryWrites int               `json:"repository_writes"`
 	LocalTestExecutions int            `json:"local_test_executions"`
 	CrossProjectRequiredGates int      `json:"cross_project_required_gates"`
 	Cases            []ConformanceCase `json:"cases"`
+}
+
+type UnknownCaseEvidence struct {
+	Scenario string         `json:"scenario"`
+	Record   UnknownRecord `json:"record"`
+}
+
+type SemanticMetricCount struct {
+	Name    string `json:"name"`
+	Total   int    `json:"total"`
+	Closed  int    `json:"closed"`
+	Unknown int    `json:"unknown"`
+	Refuted int    `json:"refuted"`
+}
+
+type SemanticMetricsDossier struct {
+	Schema                   string                `json:"schema"`
+	MetaDigest               string                `json:"meta_digest"`
+	Denominator              int                   `json:"denominator"`
+	ProofChoices             []SemanticMetricCount `json:"proof_choices"`
+	IndicatorClasses         []SemanticMetricCount `json:"indicator_classes"`
+	Cases                    []ConformanceCase     `json:"cases"`
+	UnknownRecords           []UnknownCaseEvidence `json:"unknown_records"`
+	PairedIndicatorVector    []string              `json:"paired_indicator_vector"`
+	Improvement              *ImprovementEvidence `json:"improvement"`
+	RepositoryWrites         int                   `json:"repository_writes"`
+	LocalTestExecutions      int                   `json:"local_test_executions"`
+	CrossProjectRequiredGates int                  `json:"cross_project_required_gates"`
 }
 
 type Metrics struct {
@@ -466,8 +527,16 @@ type Metrics struct {
 	CandidateDossierFiles int `json:"candidate_dossier_files"`
 	CaseReportFiles int `json:"case_report_files"`
 	CausalInputFiles int `json:"causal_input_files"`
+	SemanticMetricsDossierFiles int `json:"semantic_metrics_dossier_files"`
 	WallMS         int64  `json:"wall_ms"`
 	PeakRSSKIB     int64  `json:"peak_rss_kib"`
+	BuildMS        *int64 `json:"build_ms"`
+	TestMS         *int64 `json:"test_ms"`
+	CacheHits      *int64 `json:"cache_hits"`
+	CacheMisses    *int64 `json:"cache_misses"`
+	MetricsStatus  string `json:"metrics_status"`
+	MetricsUnknown *UnknownRecord `json:"metrics_unknown,omitempty"`
+	ActionsRunID   int64 `json:"actions_run_id,omitempty"`
 	TestsTotal     int    `json:"tests_total"`
 	TestsSelected  int    `json:"tests_selected"`
 	TestsExecuted  int    `json:"tests_executed"`
@@ -531,6 +600,14 @@ func idsOfOperators(values []OperatorDecl) []string {
 
 func allowedDecision(value string) bool {
 	return value == DecisionClosed || value == DecisionUnknown || value == DecisionRefuted
+}
+
+func allowedProofChoice(value string) bool {
+	return value == "FOUNDATION" || value == "COHERENCE" || value == "REGRESSION"
+}
+
+func allowedIndicatorClass(value string) bool {
+	return value == "DRIVER" || value == "OUTCOME" || value == "GUARDRAIL"
 }
 
 func reduceDecision(values ...string) string {
@@ -622,11 +699,25 @@ func (m MetaContract) Validate() error {
 		return errors.New("proof and indicator activity counts must both be 4/4/4")
 	}
 	seen := map[string]bool{}
+	proofCounts := map[string]int{}
+	indicatorCounts := map[string]int{}
 	for _, scenario := range m.Scenarios {
-		if scenario.ID == "" || scenario.Fixture == "" || seen[scenario.ID] || !allowedDecision(scenario.Expected) {
+		if scenario.ID == "" || scenario.Fixture == "" || seen[scenario.ID] || !allowedDecision(scenario.Expected) || !allowedProofChoice(scenario.ProofChoice) || !allowedIndicatorClass(scenario.IndicatorClass) {
 			return fmt.Errorf("scenario %q is incomplete or duplicated", scenario.ID)
 		}
 		seen[scenario.ID] = true
+		proofCounts[scenario.ProofChoice]++
+		indicatorCounts[scenario.IndicatorClass]++
+	}
+	for _, choice := range requiredProofChoices {
+		if proofCounts[choice] != 4 {
+			return fmt.Errorf("proof choice %s must have exactly four cases", choice)
+		}
+	}
+	for _, class := range requiredIndicatorClasses {
+		if indicatorCounts[class] != 4 {
+			return fmt.Errorf("indicator class %s must have exactly four cases", class)
+		}
 	}
 	return nil
 }
@@ -679,7 +770,7 @@ func (ir SemanticIR) CanonicalDigest() string {
 }
 
 func (ir SemanticIR) Validate() error {
-	if ir.Schema != IRSchemasafe() || ir.Scenario == "" || !validDigest(ir.OriginSourceDigest) || !validDigest(ir.ContractDigest) || !validDigest(ir.ToolchainDigest) || ir.CandidateSpaceID == "" || !validDigest(ir.CandidateSpaceDigest) || ir.RuleID == "" || !validDigest(ir.RuleDigest) || ir.EvaluatorID == "" || !validDigest(ir.EvaluatorDigest) || !ir.Terminal.Valid() {
+	if ir.Schema != IRSchemasafe() || ir.Scenario == "" || !allowedProofChoice(ir.ProofChoice) || !allowedIndicatorClass(ir.IndicatorClass) || !validDigest(ir.OriginSourceDigest) || !validDigest(ir.ContractDigest) || !validDigest(ir.ToolchainDigest) || ir.CandidateSpaceID == "" || !validDigest(ir.CandidateSpaceDigest) || ir.RuleID == "" || !validDigest(ir.RuleDigest) || ir.EvaluatorID == "" || !validDigest(ir.EvaluatorDigest) || !ir.Terminal.Valid() {
 		return errors.New("typed IR is incomplete")
 	}
 	graph := Graph{Schema: GraphSchema, Nodes: ir.Nodes, Edges: ir.Edges}

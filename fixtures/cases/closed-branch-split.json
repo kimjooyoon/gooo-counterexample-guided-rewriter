@@ -6,7 +6,7 @@
   "toolchain_digest": "sha256:e2147def056543c506d158ecd95cd8e666d91bfbaf1571d5b07aef4dc99ca112",
   "origin_source_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
   "origin_anchor": "branch-result",
-  "contract_digest": "sha256:893ad0b174b0ae796dc882f9c0704ed0a7626316a1bdd7656a526a7a85f680e8",
+  "contract_digest": "sha256:a6f559da871e084e183d02567fea6c437f6b6372ae584e357f87f3b59500e253",
   "candidate_space_id": "gooo-candidate-space-v1",
   "candidate_space_digest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
   "rule_id": "gooo-finite-rules-v1",

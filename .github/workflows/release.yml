@@ -17,11 +17,20 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version: '1.27.x'
+      - name: Cache Go build and module data
+        id: go-cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-1.27-${{ hashFiles('go.mod', '**/*.go', '**/*.gooo') }}
+          restore-keys: |
+            ${{ runner.os }}-go-1.27-
       - name: Shell syntax
         run: bash -n scripts/*.sh
       - name: Action syntax
         uses: raven-actions/actionlint@v2
-      - run: go test ./... -count=1
       - run: go vet ./...
       - run: scripts/semantic-audit.sh
       - name: Immutable release guard contract
@@ -35,11 +44,57 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: scripts/verify-release-lineage.sh "$GITHUB_REF_NAME"
-      - name: Generator, paired evaluation, conformance, and product validation
+      - name: Build, test, generator, paired evaluation, and Actions metrics
+        env:
+          CACHE_HIT: ${{ steps.go-cache.outputs.cache-hit }}
         run: |
           out="${RUNNER_TEMP}/gooo-counterexample-guided-rewriter-${GITHUB_RUN_ID}"
+          timing="${RUNNER_TEMP}/gooo-counterexample-guided-rewriter-timing-${GITHUB_RUN_ID}"
           mkdir -p "$out"
-          scripts/conformance.sh "$out"
+          started_ms="$(date +%s%3N)"
+          /usr/bin/time -f '%e %M' -o "$timing/build.time" go build ./...
+          /usr/bin/time -f '%e %M' -o "$timing/test.time" go test ./... -count=1
+          /usr/bin/time -f '%e %M' -o "$timing/conformance.time" scripts/conformance.sh "$out"
+          finished_ms="$(date +%s%3N)"
+          build_ms="$(awk '{printf "%d", $1 * 1000}' "$timing/build.time")"
+          test_ms="$(awk '{printf "%d", $1 * 1000}' "$timing/test.time")"
+          conformance_ms="$(awk '{printf "%d", $1 * 1000}' "$timing/conformance.time")"
+          wall_ms=$((finished_ms - started_ms))
+          build_rss_kib="$(awk '{print $2+0}' "$timing/build.time")"
+          test_rss_kib="$(awk '{print $2+0}' "$timing/test.time")"
+          conformance_rss_kib="$(awk '{print $2+0}' "$timing/conformance.time")"
+          peak_rss_kib="$build_rss_kib"
+          if (( test_rss_kib > peak_rss_kib )); then peak_rss_kib="$test_rss_kib"; fi
+          if (( conformance_rss_kib > peak_rss_kib )); then peak_rss_kib="$conformance_rss_kib"; fi
+          cache_unknown='null'
+          if [[ "$CACHE_HIT" == 'true' ]]; then
+            cache_hits=1
+            cache_misses=0
+          elif [[ "$CACHE_HIT" == 'false' ]]; then
+            cache_hits=0
+            cache_misses=1
+          else
+            cache_hits='null'
+            cache_misses='null'
+            cache_unknown='{"status":"UNKNOWN","stage":"ACTIONS","step":"OBSERVE_ACTIONS_CACHE","reason":"Actions cache result was not exposed by the cache step","unknown_class":"CACHE_OBSERVATION_UNAVAILABLE","next_operation":"RETRY_WITH_ACTIONS_CACHE_OBSERVATION","blocked_by":["actions-cache-result"]}'
+          fi
+          jq -n \
+            --arg schema 'gooo/counterexample-guided-rewriter/actions-metrics/v1' \
+            --arg status 'OBSERVED' \
+            --arg run_id "$GITHUB_RUN_ID" \
+            --arg commit "$GITHUB_SHA" \
+            --arg runner "$RUNNER_OS" \
+            --argjson build_ms "$build_ms" \
+            --argjson test_ms "$test_ms" \
+            --argjson conformance_ms "$conformance_ms" \
+            --argjson wall_ms "$wall_ms" \
+            --argjson peak_rss_kib "$peak_rss_kib" \
+            --argjson cache_hits "$cache_hits" \
+            --argjson cache_misses "$cache_misses" \
+            --argjson cache_unknown "$cache_unknown" \
+            '{schema:$schema,status:$status,run_id:($run_id|tonumber),commit:$commit,runner:$runner,build_ms:$build_ms,test_ms:$test_ms,conformance_ms:$conformance_ms,wall_ms:$wall_ms,peak_rss_kib:$peak_rss_kib,cache_provider:"actions/cache",cache_hits:$cache_hits,cache_misses:$cache_misses,cache_unknown:$cache_unknown}' \
+            "$timing/actions-metrics.json"
+          bash scripts/write-release-evidence.sh "$out" "$timing/actions-metrics.json" docs/operational-incident-tag-reuse-receipt.json "$GITHUB_REF_NAME" "$GITHUB_SHA"
       - name: Preserve release evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -49,15 +104,27 @@ jobs:
       - name: Build release assets
         run: |
           asset="${RUNNER_TEMP}/gooo-counterexample-guided-rewriter-${GITHUB_REF_NAME}.tar.gz"
-          git archive --format=tar.gz --prefix="gooo-counterexample-guided-rewriter-${GITHUB_REF_NAME}/" "$GITHUB_REF_NAME" > "$asset"
+          evidence_asset="${RUNNER_TEMP}/gooo-counterexample-guided-rewriter-${GITHUB_REF_NAME}-release-evidence.tar.gz"
+          stage="${RUNNER_TEMP}/gooo-counterexample-guided-rewriter-package-${GITHUB_RUN_ID}"
+          prefix="gooo-counterexample-guided-rewriter-${GITHUB_REF_NAME}"
+          mkdir -p "$stage"
+          git archive --format=tar.gz --prefix="${prefix}/" "$GITHUB_REF_NAME" | tar -xzf - -C "$stage"
+          cp -R "${RUNNER_TEMP}/gooo-counterexample-guided-rewriter-${GITHUB_RUN_ID}/." "$stage/${prefix}/release-evidence/"
+          tar -czf "$asset" -C "$stage" "$prefix"
+          tar -czf "$evidence_asset" -C "${RUNNER_TEMP}/gooo-counterexample-guided-rewriter-${GITHUB_RUN_ID}" .
           sha256sum "$asset" > "$asset.sha256"
-          echo "RELEASE_ASSET=$asset" >> "$GITHUB_ENV"
-          echo "RELEASE_ASSET_SHA=$asset.sha256" >> "$GITHUB_ENV"
+          sha256sum "$evidence_asset" > "$evidence_asset.sha256"
+          {
+            echo "RELEASE_ASSET=$asset"
+            echo "RELEASE_ASSET_SHA=$asset.sha256"
+            echo "RELEASE_EVIDENCE_ASSET=$evidence_asset"
+            echo "RELEASE_EVIDENCE_ASSET_SHA=$evidence_asset.sha256"
+          } >> "$GITHUB_ENV"
       - name: Create immutable GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "$GITHUB_REF_NAME" "$RELEASE_ASSET" "$RELEASE_ASSET_SHA" --draft --verify-tag --title "$GITHUB_REF_NAME" --generate-notes
+          gh release create "$GITHUB_REF_NAME" "$RELEASE_ASSET" "$RELEASE_ASSET_SHA" "$RELEASE_EVIDENCE_ASSET" "$RELEASE_EVIDENCE_ASSET_SHA" --draft --verify-tag --title "$GITHUB_REF_NAME" --generate-notes
           gh release edit "$GITHUB_REF_NAME" --draft=false
       - name: Verify immutable release API state
         env:

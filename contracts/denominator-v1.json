@@ -21,6 +21,23 @@
   "case_counts": {"CLOSED": 4, "UNKNOWN": 4, "REFUTED": 4},
   "proof_counts": {"CLOSED": 4, "UNKNOWN": 4, "REFUTED": 4},
   "indicator_counts": {"CLOSED": 4, "UNKNOWN": 4, "REFUTED": 4},
+  "proof_choice_counts": {"FOUNDATION": 4, "COHERENCE": 4, "REGRESSION": 4},
+  "indicator_class_counts": {"DRIVER": 4, "OUTCOME": 4, "GUARDRAIL": 4},
+  "case_mappings": [
+    {"scenario":"closed-guard-insertion","proof_choice":"FOUNDATION","indicator_class":"DRIVER"},
+    {"scenario":"closed-effect-narrowing","proof_choice":"FOUNDATION","indicator_class":"DRIVER"},
+    {"scenario":"closed-branch-split","proof_choice":"FOUNDATION","indicator_class":"OUTCOME"},
+    {"scenario":"replay-closed","proof_choice":"FOUNDATION","indicator_class":"GUARDRAIL"},
+    {"scenario":"ambiguous-equal-candidates","proof_choice":"COHERENCE","indicator_class":"DRIVER"},
+    {"scenario":"missing-origin","proof_choice":"COHERENCE","indicator_class":"GUARDRAIL"},
+    {"scenario":"missing-identity","proof_choice":"COHERENCE","indicator_class":"DRIVER"},
+    {"scenario":"external-utility-unknown","proof_choice":"COHERENCE","indicator_class":"GUARDRAIL"},
+    {"scenario":"reason-drift","proof_choice":"REGRESSION","indicator_class":"OUTCOME"},
+    {"scenario":"effect-drift","proof_choice":"REGRESSION","indicator_class":"OUTCOME"},
+    {"scenario":"hidden-counterexample","proof_choice":"REGRESSION","indicator_class":"GUARDRAIL"},
+    {"scenario":"normal-regression","proof_choice":"REGRESSION","indicator_class":"OUTCOME"}
+  ],
+  "semantic_metrics_dossier": "gooo/counterexample-guided-rewriter/semantic-metrics-dossier/v1",
   "decision_precedence": ["REFUTED", "UNKNOWN", "CLOSED"],
   "cross_project_gate": 0
 }

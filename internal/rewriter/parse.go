@@ -101,7 +101,7 @@ func parseMeta(input string) (MetaContract, error) {
 		case "indicator_counts":
 			meta.IndicatorCounts = DecisionCounts{Closed: mustInt(values["closed"]), Unknown: mustInt(values["unknown"]), Refuted: mustInt(values["refuted"])}
 		case "scenario":
-			meta.Scenarios = append(meta.Scenarios, ScenarioDecl{Ordinal: mustInt(values["ordinal"]), ID: values["id"], Fixture: values["fixture"], Expected: values["expected"]})
+			meta.Scenarios = append(meta.Scenarios, ScenarioDecl{Ordinal: mustInt(values["ordinal"]), ID: values["id"], Fixture: values["fixture"], Expected: values["expected"], ProofChoice: values["proof_choice"], IndicatorClass: values["indicator_class"]})
 		default:
 			return MetaContract{}, fmt.Errorf("line %d: unknown declaration %q", lineNumber+1, tokens[0])
 		}
