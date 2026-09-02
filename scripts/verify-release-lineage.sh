@@ -32,7 +32,7 @@ ahead_by=$(jq -r 'if type == "object" and .ahead_by then .ahead_by else -1 end' 
 
 commit_payload=$(gh api --method GET -H 'Accept: application/vnd.github+json' -H "X-GitHub-Api-Version: $api_version" "repos/$repo/commits/$commit_sha") || fail_closed "commit $commit_sha cannot be read"
 commit_message=$(jq -r 'if type == "object" and .commit.message then .commit.message else "missing" end' <<<"$commit_payload") || fail_closed 'commit response is not valid JSON'
-pr_number=$(sed -nE 's/.*\(#([0-9]+)\).*/\1/p' <<<"$commit_message" | tail -n 1)
+pr_number=$(sed -nE 's/.*#([0-9]+).*/\1/p' <<<"$commit_message" | tail -n 1)
 
 lineage_source='commit_message_pr'
 merged_pr='false'
