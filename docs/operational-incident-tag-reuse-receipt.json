@@ -44,6 +44,22 @@
       "blocked_by": ["actions-run-artifact-retention", "release-lineage-guard"]
     }
   },
+  "failed_v0_1_5_attempt": {
+    "tag": "v0.1.5",
+    "run_id": 33629041235,
+    "run_conclusion": "failure",
+    "commit": "2fee920c3b74b56687fb322ebbac5b3a1fb02504",
+    "artifact_ids": null,
+    "artifact_evidence": {
+      "state": "UNKNOWN",
+      "stage": "HISTORY",
+      "step": "OBSERVE_FAILED_RUN_ARTIFACTS",
+      "reason": "the release timing directory was absent and the failed run exposes no retained Actions artifacts",
+      "unknown_class": "ARTIFACTS_UNAVAILABLE",
+      "next_operation": "PRESERVE_ANY_RETAINED_FAILED_RUN_ARTIFACTS",
+      "blocked_by": ["actions-run-artifact-retention", "release-timing-directory"]
+    }
+  },
   "other_failed_v0_1_3_attempts": [
     {
       "run_id": 33621827097,
