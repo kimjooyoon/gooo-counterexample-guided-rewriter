@@ -50,7 +50,7 @@ jobs:
         run: |
           out="${RUNNER_TEMP}/gooo-counterexample-guided-rewriter-${GITHUB_RUN_ID}"
           timing="${RUNNER_TEMP}/gooo-counterexample-guided-rewriter-timing-${GITHUB_RUN_ID}"
-          mkdir -p "$out"
+          mkdir -p "$out" "$timing"
           started_ms="$(date +%s%3N)"
           /usr/bin/time -f '%e %M' -o "$timing/build.time" go build ./...
           /usr/bin/time -f '%e %M' -o "$timing/test.time" go test ./... -count=1
