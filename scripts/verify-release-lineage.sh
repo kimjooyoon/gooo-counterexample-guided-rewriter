@@ -36,9 +36,15 @@ pr_number=$(sed -nE 's/.*\(#([0-9]+)\).*/\1/p' <<<"$commit_message" | tail -n 1)
 
 lineage_source='commit_message_pr'
 merged_pr='false'
+observed_base='missing'
+observed_merge_commit='missing'
+observed_merged_at='missing'
 if [[ -n "$pr_number" ]]; then
-	pr_payload=$(gh api --method GET -H 'Accept: application/vnd.github+json' -H "X-GitHub-Api-Version: $api_version" "repos/$repo/pulls/$pr_number") || fail_closed "PR #$pr_number cannot be read"
-	merged_pr=$(jq -r --arg sha "$commit_sha" 'if type == "object" then ((.merged_at != null and .base.ref == "main" and .merge_commit_sha == $sha) | tostring) else "missing" end' <<<"$pr_payload") || fail_closed 'PR response is not valid JSON'
+	pr_view_payload=$(gh pr view "$pr_number" --json number,mergedAt,baseRefName,mergeCommit) || fail_closed "PR #$pr_number cannot be read"
+	observed_base=$(jq -r '.baseRefName // "missing"' <<<"$pr_view_payload") || fail_closed 'PR view response is not valid JSON'
+	observed_merge_commit=$(jq -r '.mergeCommit.oid // "missing"' <<<"$pr_view_payload") || fail_closed 'PR view response is not valid JSON'
+	observed_merged_at=$(jq -r '.mergedAt // "missing"' <<<"$pr_view_payload") || fail_closed 'PR view response is not valid JSON'
+	merged_pr=$(jq -r --arg sha "$commit_sha" 'if type == "object" then ((.mergedAt != null and .baseRefName == "main" and .mergeCommit.oid == $sha) | tostring) else "missing" end' <<<"$pr_view_payload") || fail_closed 'PR view response is not valid JSON'
 fi
 
 if [[ "$merged_pr" != 'true' ]]; then
@@ -53,6 +59,6 @@ if [[ "$merged_pr" != 'true' ]]; then
 	merged_pr=$(jq -r --arg sha "$commit_sha" 'if type == "array" then (any(.[]; .merged_at != null and .base.ref == "main" and .merge_commit_sha == $sha) | tostring) else "missing" end' <<<"$pulls_payload") || fail_closed 'closed PR response is not valid JSON'
 fi
 
-[[ "$merged_pr" == 'true' ]] || fail_closed "tag $tag commit $commit_sha has no merged PR lineage into main"
+[[ "$merged_pr" == 'true' ]] || fail_closed "tag $tag commit $commit_sha has no merged PR lineage into main pr_number=${pr_number:-unknown} source=$lineage_source observed_base=$observed_base observed_merge_commit=$observed_merge_commit observed_merged_at=$observed_merged_at"
 
 echo "release_lineage=CLOSED tag=$tag commit=$commit_sha merged_pr_into_main=true pr_number=${pr_number:-unknown} source=$lineage_source"
