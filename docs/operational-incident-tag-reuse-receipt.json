@@ -1,0 +1,129 @@
+{
+  "schema": "gooo/counterexample-guided-rewriter/operational-incident-tag-reuse-receipt/v1",
+  "classification": "OPERATIONAL_REFUTED",
+  "code": "TAG_DELETED_AND_VERSION_REUSED",
+  "status": "REFUTED",
+  "repository": "kimjooyoon/gooo-counterexample-guided-rewriter",
+  "preservation": {
+    "append_only": true,
+    "historical_release_modified": false,
+    "historical_runs_or_artifacts_modified": false,
+    "historical_runs_or_artifacts_deleted": false
+  },
+  "failed_attempt": {
+    "tag": "v0.1.3",
+    "tag_was_annotated": true,
+    "tag_deleted_before_final_release": true,
+    "run_id": 33621541572,
+    "run_conclusion": "cancelled",
+    "commit": "a0093d23c0c1d1ffa830cc0fae46408437d4bb33",
+    "artifact_ids": null,
+    "artifact_evidence": {
+      "state": "UNKNOWN",
+      "stage": "HISTORY",
+      "step": "OBSERVE_FAILED_RUN_ARTIFACTS",
+      "reason": "the cancelled run exposes no retained Actions artifacts",
+      "unknown_class": "ARTIFACTS_UNAVAILABLE",
+      "next_operation": "PRESERVE_ANY_RETAINED_FAILED_RUN_ARTIFACTS",
+      "blocked_by": ["actions-run-artifact-retention"]
+    }
+  },
+  "other_failed_v0_1_3_attempts": [
+    {
+      "run_id": 33621827097,
+      "run_conclusion": "failure",
+      "commit": "5dff0388519a2490cc75c76464b0f419cd3f6e6e",
+      "artifact_ids": null,
+      "artifact_evidence": {
+        "state": "UNKNOWN",
+        "stage": "HISTORY",
+        "step": "OBSERVE_FAILED_RUN_ARTIFACTS",
+        "reason": "the failed run exposes no retained Actions artifacts",
+        "unknown_class": "ARTIFACTS_UNAVAILABLE",
+        "next_operation": "PRESERVE_ANY_RETAINED_FAILED_RUN_ARTIFACTS",
+        "blocked_by": ["actions-run-artifact-retention"]
+      }
+    },
+    {
+      "run_id": 33622070557,
+      "run_conclusion": "failure",
+      "commit": "dbee0692e603acccdfde9fc16035a91fc0d2b356",
+      "artifact_ids": null,
+      "artifact_evidence": {
+        "state": "UNKNOWN",
+        "stage": "HISTORY",
+        "step": "OBSERVE_FAILED_RUN_ARTIFACTS",
+        "reason": "the failed run exposes no retained Actions artifacts",
+        "unknown_class": "ARTIFACTS_UNAVAILABLE",
+        "next_operation": "PRESERVE_ANY_RETAINED_FAILED_RUN_ARTIFACTS",
+        "blocked_by": ["actions-run-artifact-retention"]
+      }
+    },
+    {
+      "run_id": 33622334793,
+      "run_conclusion": "failure",
+      "commit": "40b3699de7220ee6398d1f86d1adf1af32e5f372",
+      "artifact_ids": null,
+      "artifact_evidence": {
+        "state": "UNKNOWN",
+        "stage": "HISTORY",
+        "step": "OBSERVE_FAILED_RUN_ARTIFACTS",
+        "reason": "the failed run exposes no retained Actions artifacts",
+        "unknown_class": "ARTIFACTS_UNAVAILABLE",
+        "next_operation": "PRESERVE_ANY_RETAINED_FAILED_RUN_ARTIFACTS",
+        "blocked_by": ["actions-run-artifact-retention"]
+      }
+    },
+    {
+      "run_id": 33622669053,
+      "run_conclusion": "failure",
+      "commit": "fac0b4c5a5d25f8835c10da042f8ad5378107474",
+      "artifact_ids": null,
+      "artifact_evidence": {
+        "state": "UNKNOWN",
+        "stage": "HISTORY",
+        "step": "OBSERVE_FAILED_RUN_ARTIFACTS",
+        "reason": "the failed run exposes no retained Actions artifacts",
+        "unknown_class": "ARTIFACTS_UNAVAILABLE",
+        "next_operation": "PRESERVE_ANY_RETAINED_FAILED_RUN_ARTIFACTS",
+        "blocked_by": ["actions-run-artifact-retention"]
+      }
+    }
+  ],
+  "reused_version": {
+    "tag": "v0.1.3",
+    "final_commit": "12f22e92fded26a12321001f82cbbc84f154c620",
+    "release_id": 381184181,
+    "release_immutable": true,
+    "release_run_id": 33622979843,
+    "release_run_conclusion": "success",
+    "release_artifacts": [
+      {
+        "id": 541057141,
+        "name": "gooo-counterexample-guided-rewriter-v0.1.3.tar.gz",
+        "digest": "sha256:b1a1a6ee5301adfad00350a6e356c349bb45204b29a92a59dfc104df3e1f59e6"
+      },
+      {
+        "id": 541057140,
+        "name": "gooo-counterexample-guided-rewriter-v0.1.3.tar.gz.sha256",
+        "digest": "sha256:0404fd8caeb4239417bf36b83a239c61bdaa263fbd39570f1ba7fd5f1a5bbc03"
+      }
+    ]
+  },
+  "failed_v0_1_2_attempt": {
+    "tag": "v0.1.2",
+    "commit": "2d26d9a244140ea27645ae09d979f192e95043fa",
+    "run_id": 33621308409,
+    "run_conclusion": "failure",
+    "artifact_ids": null,
+    "artifact_evidence": {
+      "state": "UNKNOWN",
+      "stage": "HISTORY",
+      "step": "OBSERVE_FAILED_RUN_ARTIFACTS",
+      "reason": "the failed run exposes no retained Actions artifacts",
+      "unknown_class": "ARTIFACTS_UNAVAILABLE",
+      "next_operation": "PRESERVE_ANY_RETAINED_FAILED_RUN_ARTIFACTS",
+      "blocked_by": ["actions-run-artifact-retention"]
+    }
+  }
+}

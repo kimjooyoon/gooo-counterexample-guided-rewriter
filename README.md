@@ -12,6 +12,8 @@ Every candidate records its causal input, preconditions, input and transformed I
 
 The fixed contract has exactly twelve cells: `4 CLOSED`, `4 UNKNOWN`, and `4 REFUTED`. It also declares `4/4/4` proof and indicator counts. The compiler fixture `closed-branch-split` starts with an `UNKNOWN` top decision and closes it only through an explicit `explicit_fail_closed` branch; no implicit `FIXED_POINT` state is used.
 
+Each cell also has one declared proof choice (`FOUNDATION`, `COHERENCE`, or `REGRESSION`) and indicator class (`DRIVER`, `OUTCOME`, or `GUARDRAIL`). The generated semantic-metrics dossier carries all twelve mappings, all four complete UNKNOWN records, the exact paired indicator vector, and an `UNKNOWN` improvement claim unless an identity-matched before/after metric pair exists.
+
 ## Run
 
 The command writes only to a caller-owned output directory outside the input repository. It checks the input boundary before and after generation and reports `repository_writes=0` when unchanged.
@@ -27,3 +29,5 @@ go run ./cmd/gooo-counterexample-guided-rewriter \
 The fixed corpus is the twelve scenarios declared in `.gooo`. CI on pull requests and the default branch performs all generation and paired before/after validation, then publishes caller-owned artifacts. Local test, build, vet, formatting, shell, action, assertion, generator, conformance, and product-validation executions are deliberately absent from the release protocol.
 
 The reducer `v0.1.1` and error-directed planner `v0.1.1` are recorded as immutable, digest-pinned optional oracles. The bounded self-change compiler and causal counterexample reducer are optional immutable-release inputs only; they are never required for this repository's conformance gate (`cross_project_gate=0`). No source mutation, auto-apply, commit, merge, or input-repository output is performed by the runtime.
+
+Release workflows package the generated conformance output, semantic-metrics dossier, Actions timing/cache receipt, and historical preservation receipts in a separate release-evidence bundle. The prior immutable `v0.1.3` release and the `TAG_DELETED_AND_VERSION_REUSED` incident remain preserved as historical evidence.

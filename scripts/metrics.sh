@@ -19,6 +19,7 @@ candidate_patch_files=$(find "$output_dir" -type f -name '*.patch.json' | wc -l 
 candidate_dossier_files=$(find "$output_dir" -type f -name '*.dossier.json' | wc -l | tr -d ' ')
 case_report_files=$(find "$output_dir" -type f -name 'case-report.json' | wc -l | tr -d ' ')
 causal_input_files=$(find "$output_dir" -type f -name 'causal-input.json' | wc -l | tr -d ' ')
+semantic_metrics_dossier_files=$(find "$output_dir" -type f -name 'semantic-metrics-dossier.json' | wc -l | tr -d ' ')
 wall_ms=$(awk '{printf "%d", $1 * 1000}' "$runtime_file")
 peak_rss_kib=$(awk '{print $2+0}' "$runtime_file")
 tests_total=$(jq '.scenarios' "$report")
@@ -54,6 +55,7 @@ jq -n \
   --argjson candidate_dossier_files "$candidate_dossier_files" \
   --argjson case_report_files "$case_report_files" \
   --argjson causal_input_files "$causal_input_files" \
+  --argjson semantic_metrics_dossier_files "$semantic_metrics_dossier_files" \
   --argjson wall_ms "$wall_ms" \
   --argjson peak_rss_kib "$peak_rss_kib" \
   --argjson tests_total "$tests_total" \
@@ -72,7 +74,13 @@ jq -n \
   --argjson local_test_executions "$local_test_executions" \
   --argjson cross_project_required_gates "$cross_project_required_gates" \
   --argjson paired_indicator_vector "$paired_indicator_vector" \
-  '{schema:$schema,inventory_excludes:$inventory_excludes,go_files:$go_files,gooo_files:$gooo_files,physical_lines:$physical_lines,descendant_dirs:$descendant_dirs,regular_files:$regular_files,generated_files:$generated_files,generated_bytes:$generated_bytes,candidate_gooo_files:$candidate_gooo_files,candidate_ir_files:$candidate_ir_files,candidate_patch_files:$candidate_patch_files,candidate_dossier_files:$candidate_dossier_files,case_report_files:$case_report_files,causal_input_files:$causal_input_files,wall_ms:$wall_ms,peak_rss_kib:$peak_rss_kib,tests_total:$tests_total,tests_selected:$tests_selected,tests_executed:$tests_executed,tests_reused:$tests_reused,tests_failed:$tests_failed,tests_unknown:$tests_unknown,proof_closed:$proof_closed,proof_unknown:$proof_unknown,proof_refuted:$proof_refuted,indicator_closed:$indicator_closed,indicator_unknown:$indicator_unknown,indicator_refuted:$indicator_refuted,external_utility_unknown:$external_utility_unknown,local_test_executions:$local_test_executions,cross_project_required_gates:$cross_project_required_gates,paired_indicator_vector:$paired_indicator_vector}' \
+  --argjson build_ms null \
+  --argjson test_ms null \
+  --argjson cache_hits null \
+  --argjson cache_misses null \
+  --arg metrics_status 'UNKNOWN' \
+  --argjson metrics_unknown '{"stage":"ACTIONS","step":"CAPTURE_ACTIONS_METRICS","reason":"actual Actions build/test/cache metrics are not available to this generation step","unknown_class":"ACTIONS_METRICS_UNAVAILABLE","next_operation":"RECORD_ACTIONS_METRICS","blocked_by":["actions-run"]}' \
+  '{schema:$schema,inventory_excludes:$inventory_excludes,go_files:$go_files,gooo_files:$gooo_files,physical_lines:$physical_lines,descendant_dirs:$descendant_dirs,regular_files:$regular_files,generated_files:$generated_files,generated_bytes:$generated_bytes,candidate_gooo_files:$candidate_gooo_files,candidate_ir_files:$candidate_ir_files,candidate_patch_files:$candidate_patch_files,candidate_dossier_files:$candidate_dossier_files,case_report_files:$case_report_files,causal_input_files:$causal_input_files,semantic_metrics_dossier_files:$semantic_metrics_dossier_files,wall_ms:$wall_ms,peak_rss_kib:$peak_rss_kib,build_ms:$build_ms,test_ms:$test_ms,cache_hits:$cache_hits,cache_misses:$cache_misses,metrics_status:$metrics_status,metrics_unknown:$metrics_unknown,tests_total:$tests_total,tests_selected:$tests_selected,tests_executed:$tests_executed,tests_reused:$tests_reused,tests_failed:$tests_failed,tests_unknown:$tests_unknown,proof_closed:$proof_closed,proof_unknown:$proof_unknown,proof_refuted:$proof_refuted,indicator_closed:$indicator_closed,indicator_unknown:$indicator_unknown,indicator_refuted:$indicator_refuted,external_utility_unknown:$external_utility_unknown,local_test_executions:$local_test_executions,cross_project_required_gates:$cross_project_required_gates,paired_indicator_vector:$paired_indicator_vector}' \
   > "$output_dir/metrics.json"
 
 cat "$output_dir/metrics.json"

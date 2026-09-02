@@ -9,8 +9,10 @@
     "proof_closed", "proof_unknown", "proof_refuted", "indicator_closed", "indicator_unknown", "indicator_refuted",
     "external_utility_unknown", "local_test_executions", "cross_project_required_gates"
   ],
+  "integer_or_null_fields": ["build_ms", "test_ms", "cache_hits", "cache_misses"],
+  "nullable_fields_require_unknown": true,
   "test_semantics": "fixed counterexample denominator and exact paired before-after indicators",
-  "generated_artifacts": ["causal-input.json", "candidate-*.gooo", "candidate-*.ir.json", "candidate-*.patch.json", "candidate-*.dossier.json", "case-report.json", "conformance-report.json", "metrics.json"],
+  "generated_artifacts": ["causal-input.json", "candidate-*.gooo", "candidate-*.ir.json", "candidate-*.patch.json", "candidate-*.dossier.json", "case-report.json", "conformance-report.json", "semantic-metrics-dossier.json", "metrics.json", "release-evidence.json"],
   "paired_indicator_vector": "exact per-cell before/after evaluator evidence",
   "forbidden_aggregates": ["score", "percentage"],
   "repository_writes": 0

@@ -93,6 +93,10 @@ func runFixed(meta rewriter.MetaContract, metaRaw []byte, inputRoot, outputDir s
 	if err := rewriter.WriteJSON(filepath.Join(outputDir, "conformance-report.json"), conformance); err != nil {
 		return err
 	}
+	semanticMetrics := rewriter.BuildSemanticMetricsDossier(meta, metaRaw, reports)
+	if err := rewriter.WriteJSON(filepath.Join(outputDir, "semantic-metrics-dossier.json"), semanticMetrics); err != nil {
+		return err
+	}
 	fmt.Printf("cells=%d scenarios=%d closed=%d unknown=%d refuted=%d proof=%d/%d/%d indicators=%d/%d/%d external_utility_unknown=%d repository_writes=%d local_test_executions=%d cross_project_required_gates=%d\n", conformance.Cells, conformance.Scenarios, conformance.Closed, conformance.Unknown, conformance.Refuted, conformance.ProofCounts.Closed, conformance.ProofCounts.Unknown, conformance.ProofCounts.Refuted, conformance.IndicatorCounts.Closed, conformance.IndicatorCounts.Unknown, conformance.IndicatorCounts.Refuted, conformance.ExternalUtilityUnknown, conformance.RepositoryWrites, conformance.LocalTestExecutions, conformance.CrossProjectRequiredGates)
 	return nil
 }
