@@ -23,6 +23,9 @@ if grep -R -n 'CONTRACT_DIGEST_PLACEHOLDER' "$repo_root/fixtures"; then
 	exit 1
 fi
 grep -q -- '--draft' "$repo_root/.github/workflows/release.yml"
+grep -q 'verify-release-lineage.sh' "$repo_root/.github/workflows/release.yml"
+test -f "$repo_root/docs/operational-incidents.json"
+grep -q 'PR_FIRST_BYPASSED' "$repo_root/docs/operational-incidents.json"
 if grep -nE 'release delete|tag -f|--force|--clobber' "$repo_root/.github/workflows"; then
 	echo 'public release deletion, retagging, or overwrite is forbidden' >&2
 	exit 1

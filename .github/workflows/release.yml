@@ -30,6 +30,10 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           IMMUTABLE_RELEASE_SETTING_ALLOW_UNAVAILABLE: 'true'
         run: scripts/verify-immutable-release.sh --setting
+      - name: Verify merged PR lineage
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: scripts/verify-release-lineage.sh "$GITHUB_REF_NAME"
       - name: Generator, paired evaluation, conformance, and product validation
         run: |
           out="${RUNNER_TEMP}/gooo-counterexample-guided-rewriter-${GITHUB_RUN_ID}"

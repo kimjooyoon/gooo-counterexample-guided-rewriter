@@ -1,0 +1,26 @@
+{
+  "schema": "gooo/counterexample-guided-rewriter/operational-incidents/v1",
+  "incidents": [
+    {
+      "id": "2026-09-02-PR_FIRST_BYPASSED",
+      "classification": "OPERATIONAL_REFUTED",
+      "code": "PR_FIRST_BYPASSED",
+      "status": "REFUTED",
+      "repository": "kimjooyoon/gooo-counterexample-guided-rewriter",
+      "direct_main_commit": "a0093d23c0c1d1ffa830cc0fae46408437d4bb33",
+      "cause": "release-preflight-fix-was-pushed-directly-to-main-after-pr-3-merge",
+      "release_attempt": {
+        "tag": "v0.1.3",
+        "run_id": "33621541572",
+        "run_url": "https://github.com/kimjooyoon/gooo-counterexample-guided-rewriter/actions/runs/33621541572",
+        "run_conclusion": "cancelled",
+        "release_created": false,
+        "tag_deleted_before_release": true
+      },
+      "protected_public_history": ["v0.1.1", "v0.1.2"],
+      "corrective_action": "follow-up-pr-required-before-fresh-v0.1.3-release",
+      "prevention_guard": "scripts/verify-release-lineage.sh",
+      "release_target_requirement": "tag-commit-must-be-a-merged-pr-commit-in-main-lineage"
+    }
+  ]
+}
