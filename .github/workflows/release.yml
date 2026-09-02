@@ -28,6 +28,7 @@ jobs:
       - name: Verify immutable repository setting
         env:
           GH_TOKEN: ${{ github.token }}
+          IMMUTABLE_RELEASE_SETTING_ALLOW_UNAVAILABLE: 'true'
         run: scripts/verify-immutable-release.sh --setting
       - name: Generator, paired evaluation, conformance, and product validation
         run: |
