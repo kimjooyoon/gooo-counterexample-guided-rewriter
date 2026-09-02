@@ -135,7 +135,7 @@ func buildCandidate(meta MetaContract, c Counterexample, baseIR SemanticIR, oper
 		proofAttributes := map[string]string{"causal_input": c.CausalInput.ID, "rule": meta.Rule.ID, "decision": DecisionClosed}
 		for _, node := range transformed.Nodes {
 			for key, value := range attributes(node) {
-				if strings.HasPrefix(key, "behavior_") || strings.HasPrefix(key, "reason_") || strings.HasPrefix(key, "effects_") {
+				if strings.HasPrefix(key, "behavior_") || strings.HasPrefix(key, "reason_") || strings.HasPrefix(key, "effects_") || key == "decision_branch" || key == "fail_closed_branch" || key == "top_decision" {
 					proofAttributes[key] = value
 				}
 			}

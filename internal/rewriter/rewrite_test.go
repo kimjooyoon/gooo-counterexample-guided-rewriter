@@ -62,7 +62,7 @@ func TestExplicitFailClosedBranchIsNotFixedPoint(t *testing.T) {
 			}
 			foundExplicit := false
 			for _, node := range result.Artifact.IR.Nodes {
-				if node.ID == "branch-result" && attributes(node)["decision_branch"] == "explicit_fail_closed" {
+				if node.Kind == "proof" && attributes(node)["decision_branch"] == "explicit_fail_closed" {
 					foundExplicit = true
 				}
 			}
