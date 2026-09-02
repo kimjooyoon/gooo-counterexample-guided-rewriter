@@ -20,6 +20,10 @@ const (
 	CaseReportSchema     = "gooo/counterexample-guided-rewriter/case-report/v1"
 	ConformanceSchema    = "gooo/counterexample-guided-rewriter/conformance/v1"
 	MetricsSchema        = "gooo/counterexample-guided-rewriter/metrics/v1"
+	DossierSchema        = "gooo/counterexample-guided-rewriter/candidate-dossier/v1"
+	PatchSchema          = "gooo/counterexample-guided-rewriter/patch/v1"
+	EvaluationSchema     = "gooo/counterexample-guided-rewriter/evaluation/v1"
+	CandidateAccept      = "ACCEPT"
 	DecisionClosed       = "CLOSED"
 	DecisionUnknown      = "UNKNOWN"
 	DecisionRefuted      = "REFUTED"
@@ -27,11 +31,12 @@ const (
 
 var requiredUnknownFields = []string{"stage", "step", "reason", "unknown_class", "next_operation", "blocked_by"}
 var requiredOperators = []string{"guard-insertion", "effect-narrowing", "reason-preserving-branch-split"}
-var requiredPredicates = []string{"precondition", "origin-digest", "ir-digest", "semantic-ids", "terminal-reason", "effect-trace", "replay", "visibility"}
+var requiredPredicates = []string{"precondition", "origin-digest", "ir-digest", "semantic-ids", "terminal-reason", "effect-trace", "replay", "visibility", "corpus-preserved", "identity"}
 
 type MetaContract struct {
 	Schema           string
 	Authority        string
+	ContractDigest   string
 	Denominator      DenominatorDecl
 	Statuses         []string
 	Precedence       []string
@@ -45,6 +50,13 @@ type MetaContract struct {
 	Operators        []OperatorDecl
 	Oracles          []OraclePin
 	GenerationPlan   GenerationPlan
+	CandidateSpace   CandidateSpaceDecl
+	Rule             RuleDecl
+	Evaluator        EvaluatorDecl
+	Acceptance       AcceptanceDecl
+	MetaActivities   []MetaActivity
+	ProofCounts      DecisionCounts
+	IndicatorCounts  DecisionCounts
 	Scenarios        []ScenarioDecl
 }
 
@@ -92,11 +104,73 @@ type GenerationPlan struct {
 	Outputs []string `json:"outputs"`
 }
 
+type CandidateSpaceDecl struct {
+	ID    string `json:"id"`
+	Digest string `json:"digest"`
+	Bound int    `json:"bound"`
+}
+
+type RuleDecl struct {
+	ID     string `json:"id"`
+	Digest string `json:"digest"`
+	Count  int    `json:"count"`
+}
+
+type EvaluatorDecl struct {
+	ID     string `json:"id"`
+	Digest string `json:"digest"`
+	Kind   string `json:"kind"`
+}
+
+type AcceptanceDecl struct {
+	Relation string `json:"relation"`
+	Requires []string `json:"requires"`
+}
+
+type MetaActivity struct {
+	Ordinal  int    `json:"ordinal"`
+	ID       string `json:"id"`
+	Kind     string `json:"kind"`
+	Expected string `json:"expected"`
+}
+
+type DecisionCounts struct {
+	Closed  int `json:"CLOSED"`
+	Unknown int `json:"UNKNOWN"`
+	Refuted int `json:"REFUTED"`
+}
+
 type ScenarioDecl struct {
 	Ordinal  int    `json:"ordinal"`
 	ID       string `json:"id"`
 	Fixture  string `json:"fixture"`
 	Expected string `json:"expected"`
+}
+
+type CausalInput struct {
+	ID               string        `json:"id"`
+	Kind             string        `json:"kind"`
+	ObservedTerminal TerminalTrace `json:"observed_terminal"`
+	TargetTerminal   TerminalTrace `json:"target_terminal"`
+}
+
+func (input CausalInput) Valid() bool {
+	return input.ID != "" && input.Kind == "counterexample" && input.ObservedTerminal.Valid() && input.TargetTerminal.Valid()
+}
+
+type CorpusCase struct {
+	ID     string        `json:"id"`
+	Class  string        `json:"class"`
+	Input  string        `json:"input"`
+	Before TerminalTrace `json:"before"`
+	After  TerminalTrace `json:"after"`
+}
+
+type ExternalUtility struct {
+	Name      string `json:"name"`
+	Release   string `json:"release"`
+	Digest    string `json:"digest"`
+	Available bool   `json:"available"`
 }
 
 type TerminalTrace struct {
@@ -136,7 +210,14 @@ type SemanticIR struct {
 	Schema             string        `json:"schema"`
 	Scenario           string        `json:"scenario"`
 	OriginSourceDigest string        `json:"origin_source_digest"`
+	ContractDigest     string        `json:"contract_digest"`
 	ToolchainDigest    string        `json:"toolchain_digest"`
+	CandidateSpaceID   string        `json:"candidate_space_id"`
+	CandidateSpaceDigest string      `json:"candidate_space_digest"`
+	RuleID             string        `json:"rule_id"`
+	RuleDigest         string        `json:"rule_digest"`
+	EvaluatorID        string        `json:"evaluator_id"`
+	EvaluatorDigest    string        `json:"evaluator_digest"`
 	Nodes              []GraphNode   `json:"nodes"`
 	Edges              []GraphEdge   `json:"edges"`
 	Terminal           TerminalTrace `json:"terminal"`
@@ -155,8 +236,18 @@ type Counterexample struct {
 	ToolchainDigest    string         `json:"toolchain_digest"`
 	OriginSourceDigest string         `json:"origin_source_digest"`
 	OriginAnchor       string         `json:"origin_anchor"`
+	ContractDigest     string         `json:"contract_digest"`
+	CandidateSpaceID   string         `json:"candidate_space_id"`
+	CandidateSpaceDigest string       `json:"candidate_space_digest"`
+	RuleID             string         `json:"rule_id"`
+	RuleDigest         string         `json:"rule_digest"`
+	EvaluatorID        string         `json:"evaluator_id"`
+	EvaluatorDigest    string         `json:"evaluator_digest"`
 	Baseline           TerminalTrace  `json:"baseline"`
 	TargetTerminal     TerminalTrace  `json:"target_terminal"`
+	CausalInput        CausalInput    `json:"causal_input"`
+	Corpus             []CorpusCase   `json:"corpus"`
+	ExternalUtility    ExternalUtility `json:"external_utility"`
 	ReducedGraph       Graph          `json:"reduced_graph"`
 	Replay             ReplayEvidence `json:"replay"`
 }
@@ -179,6 +270,79 @@ type ReplayResult struct {
 	Replays               int      `json:"replays"`
 }
 
+type CorpusEvidence struct {
+	InputID  string        `json:"input_id"`
+	Class    string        `json:"class"`
+	Before   TerminalTrace `json:"before"`
+	After    TerminalTrace `json:"after"`
+	ExpectedBefore TerminalTrace `json:"expected_before"`
+	ExpectedAfter  TerminalTrace `json:"expected_after"`
+	Unchanged bool          `json:"unchanged"`
+	Preserved bool          `json:"preserved"`
+}
+
+type EvaluationIdentity struct {
+	Fixture         string `json:"fixture"`
+	SourceDigest    string `json:"source_digest"`
+	ContractDigest  string `json:"contract_digest"`
+	ToolchainDigest string `json:"toolchain_digest"`
+	EvaluatorID     string `json:"evaluator_id"`
+	EvaluatorDigest string `json:"evaluator_digest"`
+}
+
+type EvaluationResult struct {
+	Schema             string             `json:"schema"`
+	Identity           EvaluationIdentity `json:"identity"`
+	IdentityMatch      bool               `json:"identity_match"`
+	CausalInputID      string             `json:"causal_input_id"`
+	CounterexampleRemoved bool            `json:"counterexample_removed"`
+	CorpusPreserved    bool               `json:"corpus_preserved"`
+	KnownContradiction bool               `json:"known_contradiction"`
+	Contradiction      string             `json:"contradiction,omitempty"`
+	Evidence           []CorpusEvidence   `json:"evidence"`
+	PairedIndicator    []string           `json:"paired_indicator"`
+	Unknown            *UnknownRecord     `json:"unknown,omitempty"`
+}
+
+type PatchOperation struct {
+	Kind       string   `json:"kind"`
+	TargetIDs  []string `json:"target_ids"`
+	RuleID     string   `json:"rule_id"`
+	Description string  `json:"description"`
+}
+
+type PatchArtifact struct {
+	Schema            string          `json:"schema"`
+	CandidateID       string          `json:"candidate_id"`
+	Scenario          string          `json:"scenario"`
+	SourceDigest      string          `json:"source_digest"`
+	InputIRDigest     string          `json:"input_ir_digest"`
+	TransformedIRDigest string        `json:"transformed_ir_digest"`
+	CallerOwned       bool            `json:"caller_owned"`
+	AutoApply         bool            `json:"auto_apply"`
+	RepositoryWrites  int             `json:"repository_writes"`
+	Operations        []PatchOperation `json:"operations"`
+}
+
+type CandidateDossier struct {
+	Schema            string            `json:"schema"`
+	CandidateID       string            `json:"candidate_id"`
+	Scenario          string            `json:"scenario"`
+	Operator          string            `json:"operator"`
+	Decision          string            `json:"decision"`
+	CandidateStatus   string            `json:"candidate_status"`
+	CandidateSpaceID  string            `json:"candidate_space_id"`
+	CandidateSpaceDigest string         `json:"candidate_space_digest"`
+	RuleID            string            `json:"rule_id"`
+	RuleDigest        string            `json:"rule_digest"`
+	EvaluatorID       string            `json:"evaluator_id"`
+	EvaluatorDigest   string            `json:"evaluator_digest"`
+	CausalInput       CausalInput       `json:"causal_input"`
+	Patch             PatchArtifact     `json:"patch"`
+	Evaluation        EvaluationResult  `json:"evaluation"`
+	Unknown           *UnknownRecord    `json:"unknown,omitempty"`
+}
+
 type UnknownRecord struct {
 	Stage         string   `json:"stage"`
 	Step          string   `json:"step"`
@@ -196,14 +360,26 @@ type CandidateArtifact struct {
 	CandidateStatus       string            `json:"candidate_status"`
 	SourceDigest          string            `json:"source_digest"`
 	OriginSourceDigest    string            `json:"origin_source_digest"`
+	ContractDigest        string            `json:"contract_digest"`
 	ToolchainDigest       string            `json:"toolchain_digest"`
+	CandidateSpaceID      string            `json:"candidate_space_id"`
+	CandidateSpaceDigest  string            `json:"candidate_space_digest"`
+	RuleID                string            `json:"rule_id"`
+	RuleDigest            string            `json:"rule_digest"`
+	EvaluatorID           string            `json:"evaluator_id"`
+	EvaluatorDigest       string            `json:"evaluator_digest"`
 	InputIRDigest         string            `json:"input_ir_digest"`
 	TransformedIRDigest   string            `json:"transformed_ir_digest"`
 	Preconditions         []PredicateResult `json:"preconditions"`
 	AffectedSemanticIDs   []string          `json:"affected_semantic_ids"`
+	CausalInput          CausalInput        `json:"causal_input"`
 	ExpectedTerminal      TerminalTrace     `json:"expected_terminal"`
 	CounterexampleReplay  ReplayResult      `json:"counterexample_replay"`
 	CounterexampleVisible bool              `json:"counterexample_visible"`
+	CounterexampleResolved bool            `json:"counterexample_resolved"`
+	CorpusPreserved       bool              `json:"corpus_preserved"`
+	Evaluation            EvaluationResult  `json:"evaluation"`
+	Patch                 PatchArtifact     `json:"patch"`
 	IR                    SemanticIR        `json:"ir"`
 	Unknown               *UnknownRecord    `json:"unknown,omitempty"`
 }
@@ -212,12 +388,15 @@ type CandidateSummary struct {
 	CandidateID         string   `json:"candidate_id"`
 	Operator            string   `json:"operator"`
 	Status              string   `json:"status"`
+	Decision            string   `json:"decision"`
 	Accepted            bool     `json:"accepted"`
 	Refuted             bool     `json:"refuted"`
 	TransformedIRDigest string   `json:"transformed_ir_digest"`
 	AffectedSemanticIDs []string `json:"affected_semantic_ids"`
 	ArtifactGooo        string   `json:"artifact_gooo"`
 	ArtifactIR          string   `json:"artifact_ir"`
+	ArtifactPatch       string   `json:"artifact_patch"`
+	ArtifactDossier     string   `json:"artifact_dossier"`
 }
 
 type CaseReport struct {
@@ -231,10 +410,17 @@ type CaseReport struct {
 	InputIRDigest        string             `json:"input_ir_digest"`
 	Baseline             TerminalTrace      `json:"baseline"`
 	TargetTerminal       TerminalTrace      `json:"target_terminal"`
+	CausalInputID        string             `json:"causal_input_id"`
+	CausalInput           CausalInput        `json:"causal_input"`
+	EvaluatorID          string             `json:"evaluator_id"`
+	EvaluatorDigest      string             `json:"evaluator_digest"`
 	Candidates           []CandidateSummary `json:"candidates"`
 	AcceptedCandidateIDs []string           `json:"accepted_candidate_ids"`
 	Unknown              *UnknownRecord     `json:"unknown,omitempty"`
 	RepositoryWrites     int                `json:"repository_writes"`
+	LocalTestExecutions  int                `json:"local_test_executions"`
+	CrossProjectRequiredGates int           `json:"cross_project_required_gates"`
+	PairedIndicatorVector []string          `json:"paired_indicator_vector"`
 }
 
 type ConformanceCase struct {
@@ -253,12 +439,20 @@ type ConformanceReport struct {
 	Closed           int               `json:"closed"`
 	Unknown          int               `json:"unknown"`
 	Refuted          int               `json:"refuted"`
+	Cells            int               `json:"cells"`
+	ProofCounts      DecisionCounts    `json:"proof_counts"`
+	IndicatorCounts  DecisionCounts    `json:"indicator_counts"`
+	PairedIndicatorVector []string      `json:"paired_indicator_vector"`
+	ExternalUtilityUnknown int          `json:"external_utility_unknown"`
 	RepositoryWrites int               `json:"repository_writes"`
+	LocalTestExecutions int            `json:"local_test_executions"`
+	CrossProjectRequiredGates int      `json:"cross_project_required_gates"`
 	Cases            []ConformanceCase `json:"cases"`
 }
 
 type Metrics struct {
 	Schema         string `json:"schema"`
+	InventoryExcludes []string `json:"inventory_excludes"`
 	GoFiles        int    `json:"go_files"`
 	GoooFiles      int    `json:"gooo_files"`
 	PhysicalLines  int    `json:"physical_lines"`
@@ -266,6 +460,12 @@ type Metrics struct {
 	RegularFiles   int    `json:"regular_files"`
 	GeneratedFiles int    `json:"generated_files"`
 	GeneratedBytes int64  `json:"generated_bytes"`
+	CandidateGoooFiles int `json:"candidate_gooo_files"`
+	CandidateIRFiles int `json:"candidate_ir_files"`
+	CandidatePatchFiles int `json:"candidate_patch_files"`
+	CandidateDossierFiles int `json:"candidate_dossier_files"`
+	CaseReportFiles int `json:"case_report_files"`
+	CausalInputFiles int `json:"causal_input_files"`
 	WallMS         int64  `json:"wall_ms"`
 	PeakRSSKIB     int64  `json:"peak_rss_kib"`
 	TestsTotal     int    `json:"tests_total"`
@@ -274,6 +474,16 @@ type Metrics struct {
 	TestsReused    int    `json:"tests_reused"`
 	TestsFailed    int    `json:"tests_failed"`
 	TestsUnknown   int    `json:"tests_unknown"`
+	ProofClosed    int    `json:"proof_closed"`
+	ProofUnknown   int    `json:"proof_unknown"`
+	ProofRefuted   int    `json:"proof_refuted"`
+	IndicatorClosed int   `json:"indicator_closed"`
+	IndicatorUnknown int  `json:"indicator_unknown"`
+	IndicatorRefuted int   `json:"indicator_refuted"`
+	ExternalUtilityUnknown int `json:"external_utility_unknown"`
+	LocalTestExecutions int `json:"local_test_executions"`
+	CrossProjectRequiredGates int `json:"cross_project_required_gates"`
+	PairedIndicatorVector []string `json:"paired_indicator_vector"`
 }
 
 func Digest(data []byte) string {
@@ -341,8 +551,8 @@ func (m MetaContract) Validate() error {
 	if m.Schema != MetaSchema || m.Authority != "metacode" {
 		return errors.New(".gooo must declare the rewriter schema and metacode authority")
 	}
-	if m.Denominator.ID == "" || m.Denominator.Unit != "counterexample" || m.Denominator.Scenarios != len(m.Scenarios) || m.Denominator.Scenarios < 7 {
-		return errors.New("denominator must match at least seven counterexample scenarios")
+	if m.Denominator.ID == "" || m.Denominator.Unit != "counterexample" || m.Denominator.Scenarios != len(m.Scenarios) || m.Denominator.Scenarios != 12 {
+		return errors.New("denominator must match exactly twelve counterexample cells")
 	}
 	if !sameStrings(m.Statuses, []string{DecisionClosed, DecisionUnknown, DecisionRefuted}) || !sameStrings(m.Precedence, []string{DecisionRefuted, DecisionUnknown, DecisionClosed}) {
 		return errors.New("decision statuses or precedence are not declared exactly")
@@ -350,7 +560,7 @@ func (m MetaContract) Validate() error {
 	if !sameStrings(m.UnknownFields, requiredUnknownFields) {
 		return errors.New("UNKNOWN must declare the required six fields in order")
 	}
-	if m.SourcePolicy["input"] != "immutable_digest" || m.SourcePolicy["output"] != "caller_owned_temp" || m.SourcePolicy["repository_writes"] != "zero" {
+	if m.SourcePolicy["input"] != "immutable_digest" || m.SourcePolicy["output"] != "caller_owned_temp" || m.SourcePolicy["repository_writes"] != "zero" || m.SourcePolicy["local_test_executions"] != "zero" || m.SourcePolicy["auto_apply"] != "forbidden" || m.SourcePolicy["git_integration"] != "forbidden" {
 		return errors.New("input, output, or repository write policy is incomplete")
 	}
 	if m.Toolchain.Go != "1.27" || !validDigest(m.Toolchain.Digest) {
@@ -358,6 +568,12 @@ func (m MetaContract) Validate() error {
 	}
 	if m.Search.Bound != 1 || !sameStrings(m.Search.Order, requiredOperators) || m.ReplayReplays < 2 || m.CrossProjectGate != 0 {
 		return errors.New("bounded search, replay, or cross-project gate is not declared exactly")
+	}
+	if m.CandidateSpace.ID == "" || !validDigest(m.CandidateSpace.Digest) || m.CandidateSpace.Bound != 1 || m.Rule.ID == "" || !validDigest(m.Rule.Digest) || m.Rule.Count != 3 || m.Evaluator.ID == "" || !validDigest(m.Evaluator.Digest) || m.Evaluator.Kind != "independent-before-after" {
+		return errors.New("candidate space, finite rule set, or independent evaluator identity is incomplete")
+	}
+	if m.Acceptance.Relation != "counterexample-removed-and-corpus-unchanged" || !sameStrings(m.Acceptance.Requires, []string{"counterexample-removed", "corpus-preserved", "identity-match", "replay-stable"}) {
+		return errors.New("acceptance relation is not declared exactly")
 	}
 	if !sameStrings(idsOfPredicates(m.Predicates), requiredPredicates) {
 		return errors.New("hard predicates are incomplete or out of order")
@@ -380,8 +596,30 @@ func (m MetaContract) Validate() error {
 			return fmt.Errorf("optional oracle %q is not a valid digest-pinned v0.1.1 pin", oracle.Name)
 		}
 	}
-	if m.GenerationPlan.Order == nil || len(m.GenerationPlan.Outputs) < 4 {
+	if m.GenerationPlan.Order == nil || len(m.GenerationPlan.Outputs) < 6 {
 		return errors.New("generation plan must declare candidate and report outputs")
+	}
+	if len(m.MetaActivities) != 12 || m.ProofCounts.Closed != 4 || m.ProofCounts.Unknown != 4 || m.ProofCounts.Refuted != 4 || m.IndicatorCounts.Closed != 4 || m.IndicatorCounts.Unknown != 4 || m.IndicatorCounts.Refuted != 4 {
+		return errors.New("the .gooo contract must declare twelve activities and 4/4/4 proof and indicator counts")
+	}
+	activityIDs := map[string]bool{}
+	activityCounts := DecisionCounts{}
+	for _, activity := range m.MetaActivities {
+		if activity.Ordinal < 1 || activity.ID == "" || activity.Kind == "" || !allowedDecision(activity.Expected) || activityIDs[activity.ID] {
+			return fmt.Errorf("meta activity %q is incomplete or duplicated", activity.ID)
+		}
+		activityIDs[activity.ID] = true
+		switch activity.Expected {
+		case DecisionClosed:
+			activityCounts.Closed++
+		case DecisionUnknown:
+			activityCounts.Unknown++
+		case DecisionRefuted:
+			activityCounts.Refuted++
+		}
+	}
+	if activityCounts != m.ProofCounts || activityCounts != m.IndicatorCounts {
+		return errors.New("proof and indicator activity counts must both be 4/4/4")
 	}
 	seen := map[string]bool{}
 	for _, scenario := range m.Scenarios {
@@ -441,7 +679,7 @@ func (ir SemanticIR) CanonicalDigest() string {
 }
 
 func (ir SemanticIR) Validate() error {
-	if ir.Schema != IRSchemasafe() || ir.Scenario == "" || !validDigest(ir.OriginSourceDigest) || !validDigest(ir.ToolchainDigest) || !ir.Terminal.Valid() {
+	if ir.Schema != IRSchemasafe() || ir.Scenario == "" || !validDigest(ir.OriginSourceDigest) || !validDigest(ir.ContractDigest) || !validDigest(ir.ToolchainDigest) || ir.CandidateSpaceID == "" || !validDigest(ir.CandidateSpaceDigest) || ir.RuleID == "" || !validDigest(ir.RuleDigest) || ir.EvaluatorID == "" || !validDigest(ir.EvaluatorDigest) || !ir.Terminal.Valid() {
 		return errors.New("typed IR is incomplete")
 	}
 	graph := Graph{Schema: GraphSchema, Nodes: ir.Nodes, Edges: ir.Edges}

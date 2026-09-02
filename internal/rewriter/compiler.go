@@ -15,7 +15,14 @@ type CandidateSource struct {
 	Status              string
 	SourceDigest        string
 	OriginSourceDigest  string
+	ContractDigest      string
 	ToolchainDigest     string
+	CandidateSpaceID    string
+	CandidateSpaceDigest string
+	RuleID              string
+	RuleDigest          string
+	EvaluatorID         string
+	EvaluatorDigest     string
 	InputIRDigest       string
 	TransformedIRDigest string
 }
@@ -40,7 +47,8 @@ func CompileCandidate(goooPath, irPath string) (CandidateArtifact, error) {
 		return CandidateArtifact{}, err
 	}
 	if source.CandidateID != artifact.CandidateID || source.Scenario != artifact.Scenario || source.Operator != artifact.Operator || source.Status != artifact.CandidateStatus ||
-		source.SourceDigest != artifact.SourceDigest || source.OriginSourceDigest != artifact.OriginSourceDigest || source.ToolchainDigest != artifact.ToolchainDigest ||
+		source.SourceDigest != artifact.SourceDigest || source.OriginSourceDigest != artifact.OriginSourceDigest || source.ContractDigest != artifact.ContractDigest || source.ToolchainDigest != artifact.ToolchainDigest ||
+		source.CandidateSpaceID != artifact.CandidateSpaceID || source.CandidateSpaceDigest != artifact.CandidateSpaceDigest || source.RuleID != artifact.RuleID || source.RuleDigest != artifact.RuleDigest || source.EvaluatorID != artifact.EvaluatorID || source.EvaluatorDigest != artifact.EvaluatorDigest ||
 		source.InputIRDigest != artifact.InputIRDigest || source.TransformedIRDigest != artifact.TransformedIRDigest {
 		return CandidateArtifact{}, errors.New("candidate .gooo and typed IR artifact disagree")
 	}
@@ -80,7 +88,12 @@ func parseCandidateSource(path string) (CandidateSource, error) {
 			source.CandidateID, source.Scenario, source.Operator, source.Status = values["id"], values["scenario"], values["operator"], values["status"]
 		case strings.HasPrefix(tokens[0], "source_digest="):
 			values := looseKeyValues(tokens)
-			source.SourceDigest, source.OriginSourceDigest, source.ToolchainDigest = values["source_digest"], values["origin_source_digest"], values["toolchain_digest"]
+			source.SourceDigest, source.OriginSourceDigest, source.ContractDigest, source.ToolchainDigest = values["source_digest"], values["origin_source_digest"], values["contract_digest"], values["toolchain_digest"]
+		case strings.HasPrefix(tokens[0], "candidate_space_id="):
+			values := looseKeyValues(tokens)
+			source.CandidateSpaceID, source.CandidateSpaceDigest = values["candidate_space_id"], values["candidate_space_digest"]
+			source.RuleID, source.RuleDigest = values["rule_id"], values["rule_digest"]
+			source.EvaluatorID, source.EvaluatorDigest = values["evaluator_id"], values["evaluator_digest"]
 		case strings.HasPrefix(tokens[0], "input_ir_digest="):
 			values := looseKeyValues(tokens)
 			source.InputIRDigest, source.TransformedIRDigest = values["input_ir_digest"], values["transformed_ir_digest"]

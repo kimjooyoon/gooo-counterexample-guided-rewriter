@@ -35,8 +35,41 @@ func TestFixedCorpusDecisions(t *testing.T) {
 	if err := ValidateConformance(conformance, meta); err != nil {
 		t.Fatal(err)
 	}
-	if conformance.Closed != 4 || conformance.Unknown != 2 || conformance.Refuted != 1 {
+	if conformance.Closed != 4 || conformance.Unknown != 4 || conformance.Refuted != 4 {
 		t.Fatalf("unexpected counts: %+v", conformance)
+	}
+}
+
+func TestExplicitFailClosedBranchIsNotFixedPoint(t *testing.T) {
+	_, file, _, _ := runtime.Caller(0)
+	root := filepath.Clean(filepath.Join(filepath.Dir(file), "..", ".."))
+	meta, _, err := LoadMeta(filepath.Join(root, ".gooo", "rewrite.gooo"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	counterexample, _, err := LoadCounterexample(filepath.Join(root, "fixtures", "cases", "closed-branch-split.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, results, err := GenerateCase(meta, counterexample)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, result := range results {
+		if result.Accepted {
+			if result.Artifact.IR.Terminal.Decision != DecisionClosed || result.Artifact.IR.Terminal.CounterexampleVisible {
+				t.Fatalf("accepted branch did not explicitly close and remove the causal input: %+v", result.Artifact.IR.Terminal)
+			}
+			foundExplicit := false
+			for _, node := range result.Artifact.IR.Nodes {
+				if node.ID == "branch-result" && attributes(node)["decision_branch"] == "explicit_fail_closed" {
+					foundExplicit = true
+				}
+			}
+			if !foundExplicit {
+				t.Fatal("accepted branch did not declare an explicit fail-closed branch")
+			}
+		}
 	}
 }
 
