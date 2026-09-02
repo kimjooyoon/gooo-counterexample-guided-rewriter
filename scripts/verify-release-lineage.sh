@@ -30,9 +30,22 @@ compare_status=$(jq -r 'if type == "object" and .status then .status else "missi
 ahead_by=$(jq -r 'if type == "object" and .ahead_by then .ahead_by else -1 end' <<<"$compare_payload") || fail_closed 'compare response is not valid JSON'
 [[ ("$compare_status" == 'behind' || "$compare_status" == 'identical') && "$ahead_by" -eq 0 ]] || fail_closed "tag $tag commit $commit_sha is not in main lineage"
 
-lineage_source='commit_pulls'
-pulls_payload=$(gh api --method GET -H 'Accept: application/vnd.github+json' -H "X-GitHub-Api-Version: $api_version" "repos/$repo/commits/$commit_sha/pulls") || fail_closed "PR lineage for $commit_sha cannot be read"
-merged_pr=$(jq -r --arg sha "$commit_sha" 'if type == "array" then (any(.[]; .merged_at != null and .base.ref == "main" and .merge_commit_sha == $sha) | tostring) else "missing" end' <<<"$pulls_payload") || fail_closed 'PR lineage response is not valid JSON'
+commit_payload=$(gh api --method GET -H 'Accept: application/vnd.github+json' -H "X-GitHub-Api-Version: $api_version" "repos/$repo/commits/$commit_sha") || fail_closed "commit $commit_sha cannot be read"
+commit_message=$(jq -r 'if type == "object" and .commit.message then .commit.message else "missing" end' <<<"$commit_payload") || fail_closed 'commit response is not valid JSON'
+pr_number=$(sed -nE 's/.*\(#([0-9]+)\).*/\1/p' <<<"$commit_message" | tail -n 1)
+
+lineage_source='commit_message_pr'
+merged_pr='false'
+if [[ -n "$pr_number" ]]; then
+	pr_payload=$(gh api --method GET -H 'Accept: application/vnd.github+json' -H "X-GitHub-Api-Version: $api_version" "repos/$repo/pulls/$pr_number") || fail_closed "PR #$pr_number cannot be read"
+	merged_pr=$(jq -r --arg sha "$commit_sha" 'if type == "object" then ((.merged_at != null and .base.ref == "main" and .merge_commit_sha == $sha) | tostring) else "missing" end' <<<"$pr_payload") || fail_closed 'PR response is not valid JSON'
+fi
+
+if [[ "$merged_pr" != 'true' ]]; then
+	lineage_source='commit_pulls'
+	pulls_payload=$(gh api --method GET -H 'Accept: application/vnd.github+json' -H "X-GitHub-Api-Version: $api_version" "repos/$repo/commits/$commit_sha/pulls") || fail_closed "PR lineage for $commit_sha cannot be read"
+	merged_pr=$(jq -r --arg sha "$commit_sha" 'if type == "array" then (any(.[]; .merged_at != null and .base.ref == "main" and .merge_commit_sha == $sha) | tostring) else "missing" end' <<<"$pulls_payload") || fail_closed 'PR lineage response is not valid JSON'
+fi
 
 if [[ "$merged_pr" != 'true' ]]; then
 	lineage_source='closed_main_pulls'
@@ -42,4 +55,4 @@ fi
 
 [[ "$merged_pr" == 'true' ]] || fail_closed "tag $tag commit $commit_sha has no merged PR lineage into main"
 
-echo "release_lineage=CLOSED tag=$tag commit=$commit_sha merged_pr_into_main=true source=$lineage_source"
+echo "release_lineage=CLOSED tag=$tag commit=$commit_sha merged_pr_into_main=true pr_number=${pr_number:-unknown} source=$lineage_source"
