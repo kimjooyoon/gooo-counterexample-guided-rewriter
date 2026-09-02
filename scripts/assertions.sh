@@ -18,7 +18,7 @@ if [[ -f "$metrics" ]]; then
 fi
 
 find "$output_dir/cases" -type f -name '*.gooo' -exec jq -R -e 'length > 0' {} + >/dev/null
-jq -e '.cases | all(.[]; (.artifact_gooo != null and .artifact_ir != null and .artifact_patch != null and .artifact_dossier != null))' "$output_dir/cases"/*/case-report.json >/dev/null
+jq -e '.candidates | all(.[]; (.artifact_gooo != null and .artifact_ir != null and .artifact_patch != null and .artifact_dossier != null))' "$output_dir/cases"/*/case-report.json >/dev/null
 find "$output_dir/cases" -type f -name '*.dossier.json' -exec jq -e '(.decision == "ACCEPT" or .decision == "UNKNOWN" or .decision == "REFUTED")' {} + >/dev/null
 find "$output_dir/cases" -type f -name '*.patch.json' -exec jq -e '(.caller_owned == true and .auto_apply == false and .repository_writes == 0)' {} + >/dev/null
 
