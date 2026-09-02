@@ -1,0 +1,21 @@
+{
+  "schema": "gooo/semantic_counterexample_reduction_report/v1",
+  "id": "missing-identity",
+  "scenario": "missing-identity",
+  "source_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "toolchain_digest": "sha256:e2147def056543c506d158ecd95cd8e666d91bfbaf1571d5b07aef4dc99ca112",
+  "origin_source_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "origin_anchor": "effect-identity",
+  "contract_digest": "sha256:893ad0b174b0ae796dc882f9c0704ed0a7626316a1bdd7656a526a7a85f680e8",
+  "candidate_space_id": "gooo-candidate-space-v1",
+  "candidate_space_digest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+  "rule_id": "gooo-finite-rules-v1",
+  "rule_digest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+  "evaluator_id": "gooo-compiler-fixture-evaluator-v1",
+  "causal_input": {"id": "causal-input", "kind": "counterexample", "observed_terminal": {"decision": "REFUTED", "reason": "unsafe effect reached without guard", "reason_digest": "sha256:40a70baaf851381e0ff3f46cd26d13b420b7fb6d30b9b9d59e25cc0c0698828f", "effect_trace": ["effect:publish"], "counterexample_visible": true}, "target_terminal": {"decision": "CLOSED", "reason": "guarded effect is safe", "reason_digest": "sha256:840ae01336d634c15026acfa6a2a7e781d919ac1226145f663601a6d4ef1919a", "effect_trace": ["effect:publish"], "counterexample_visible": false}},
+  "corpus": [{"id": "normal", "class": "normal", "input": "normal", "before": {"decision": "CLOSED", "reason": "corpus normal", "reason_digest": "sha256:4bdb3856e12a1b9975599cbed324d579030b0aaaa96f2ee4b076506b397ecfb0", "effect_trace": [], "counterexample_visible": false}, "after": {"decision": "CLOSED", "reason": "corpus normal", "reason_digest": "sha256:4bdb3856e12a1b9975599cbed324d579030b0aaaa96f2ee4b076506b397ecfb0", "effect_trace": [], "counterexample_visible": false}}, {"id": "regression", "class": "regression", "input": "regression", "before": {"decision": "REFUTED", "reason": "corpus regression", "reason_digest": "sha256:8f58b2a0b9252fe242a2556c6b477afd872042ed5976ba41d27e8cb6fea4195e", "effect_trace": [], "counterexample_visible": false}, "after": {"decision": "REFUTED", "reason": "corpus regression", "reason_digest": "sha256:8f58b2a0b9252fe242a2556c6b477afd872042ed5976ba41d27e8cb6fea4195e", "effect_trace": [], "counterexample_visible": false}}],
+  "baseline": {"decision": "REFUTED", "reason": "unsafe effect reached without guard", "reason_digest": "sha256:40a70baaf851381e0ff3f46cd26d13b420b7fb6d30b9b9d59e25cc0c0698828f", "effect_trace": ["effect:publish"], "counterexample_visible": true},
+  "target_terminal": {"decision": "CLOSED", "reason": "guarded effect is safe", "reason_digest": "sha256:840ae01336d634c15026acfa6a2a7e781d919ac1226145f663601a6d4ef1919a", "effect_trace": ["effect:publish"], "counterexample_visible": false},
+  "replay": {"baseline_replays": 2, "candidate_replays": 2},
+  "reduced_graph": {"schema": "gooo/semantic_graph/v1", "nodes": [{"id": "effect-identity", "kind": "effect", "type": "effect<external-write>", "label": "identity incomplete effect", "attributes": {"guardable": "true", "behavior_normal": "CLOSED", "behavior_regression": "REFUTED"}}, {"id": "counterexample-anchor", "kind": "observation", "type": "counterexample", "label": "identity counterexample"}], "edges": [{"id": "control-identity", "from": "counterexample-anchor", "to": "effect-identity", "kind": "control", "type": "reaches"}]}
+}

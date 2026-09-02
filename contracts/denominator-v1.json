@@ -1,18 +1,26 @@
 {
   "schema": "gooo/counterexample-guided-rewriter/denominator/v1",
   "authority": "metacode",
-  "id": "counterexample-guided-rewriter-v1",
+  "id": "counterexample-guided-rewriter-v2",
   "unit": "counterexample",
-  "scenarios": 7,
+  "scenarios": 12,
   "fixed_case_ids": [
     "closed-guard-insertion",
     "closed-effect-narrowing",
     "closed-branch-split",
+    "replay-closed",
     "ambiguous-equal-candidates",
     "missing-origin",
+    "missing-identity",
+    "external-utility-unknown",
     "reason-drift",
-    "replay-closed"
+    "effect-drift",
+    "hidden-counterexample",
+    "normal-regression"
   ],
+  "case_counts": {"CLOSED": 4, "UNKNOWN": 4, "REFUTED": 4},
+  "proof_counts": {"CLOSED": 4, "UNKNOWN": 4, "REFUTED": 4},
+  "indicator_counts": {"CLOSED": 4, "UNKNOWN": 4, "REFUTED": 4},
   "decision_precedence": ["REFUTED", "UNKNOWN", "CLOSED"],
   "cross_project_gate": 0
 }

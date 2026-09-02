@@ -29,7 +29,8 @@ func RenderCandidateGooo(a CandidateArtifact) string {
 		"",
 		"authority metacode",
 		"candidate id="+a.CandidateID+" scenario="+a.Scenario+" operator="+a.Operator+" status="+a.CandidateStatus,
-		"source_digest="+a.SourceDigest+" origin_source_digest="+a.OriginSourceDigest+" toolchain_digest="+a.ToolchainDigest,
+		"source_digest="+a.SourceDigest+" origin_source_digest="+a.OriginSourceDigest+" contract_digest="+a.ContractDigest+" toolchain_digest="+a.ToolchainDigest,
+		"candidate_space_id="+a.CandidateSpaceID+" candidate_space_digest="+a.CandidateSpaceDigest+" rule_id="+a.RuleID+" rule_digest="+a.RuleDigest+" evaluator_id="+a.EvaluatorID+" evaluator_digest="+a.EvaluatorDigest,
 		"input_ir_digest="+a.InputIRDigest+" transformed_ir_digest="+a.TransformedIRDigest,
 		"affected_semantic_ids="+strings.Join(a.AffectedSemanticIDs, ","),
 	)
@@ -39,7 +40,9 @@ func RenderCandidateGooo(a CandidateArtifact) string {
 	terminal := a.ExpectedTerminal.Normalized()
 	lines = append(lines,
 		"terminal decision="+terminal.Decision+" reason="+strconv.Quote(terminal.Reason)+" reason_digest="+terminal.ReasonDigest+" effect_trace="+strings.Join(terminal.EffectTrace, ","),
-		"replay baseline_decision="+a.CounterexampleReplay.BaselineDecision+" candidate_decision="+a.CounterexampleReplay.CandidateDecision+" stable="+strconv.FormatBool(a.CounterexampleReplay.Stable)+" replays="+strconv.Itoa(a.CounterexampleReplay.Replays)+" counterexample_visible="+strconv.FormatBool(a.CounterexampleVisible),
+		"replay baseline_decision="+a.CounterexampleReplay.BaselineDecision+" candidate_decision="+a.CounterexampleReplay.CandidateDecision+" stable="+strconv.FormatBool(a.CounterexampleReplay.Stable)+" replays="+strconv.Itoa(a.CounterexampleReplay.Replays)+" counterexample_visible="+strconv.FormatBool(a.CounterexampleVisible)+" counterexample_resolved="+strconv.FormatBool(a.CounterexampleResolved),
+		"evaluation identity_match="+strconv.FormatBool(a.Evaluation.IdentityMatch)+" corpus_preserved="+strconv.FormatBool(a.CorpusPreserved)+" causal_input="+a.Evaluation.CausalInputID,
+		"patch caller_owned=true auto_apply=false repository_writes=0",
 		"ir_digest="+a.TransformedIRDigest,
 	)
 	if a.Unknown != nil {
@@ -51,6 +54,9 @@ func RenderCandidateGooo(a CandidateArtifact) string {
 func WriteCaseArtifacts(outputDir string, report CaseReport, results []CandidateResult) error {
 	caseDir := filepath.Join(outputDir, "cases", report.Scenario)
 	if err := os.MkdirAll(filepath.Join(caseDir, "candidates"), 0o755); err != nil {
+		return err
+	}
+	if err := WriteJSON(filepath.Join(caseDir, "causal-input.json"), report.CausalInput); err != nil {
 		return err
 	}
 	for index := range results {
@@ -66,27 +72,56 @@ func WriteCaseArtifacts(outputDir string, report CaseReport, results []Candidate
 		if err := WriteJSON(irPath, result.Artifact); err != nil {
 			return err
 		}
+		patchPath := filepath.Join(caseDir, "candidates", result.Artifact.CandidateID+".patch.json")
+		if err := WriteJSON(patchPath, result.Artifact.Patch); err != nil {
+			return err
+		}
+		dossierPath := filepath.Join(caseDir, "candidates", result.Artifact.CandidateID+".dossier.json")
+		dossier := CandidateDossier{
+			Schema: DossierSchema, CandidateID: result.Artifact.CandidateID, Scenario: result.Artifact.Scenario,
+			Operator: result.Artifact.Operator, Decision: result.Summary.Decision, CandidateStatus: result.Artifact.CandidateStatus,
+			CandidateSpaceID: result.Artifact.CandidateSpaceID, CandidateSpaceDigest: result.Artifact.CandidateSpaceDigest,
+			RuleID: result.Artifact.RuleID, RuleDigest: result.Artifact.RuleDigest,
+			EvaluatorID: result.Artifact.EvaluatorID, EvaluatorDigest: result.Artifact.EvaluatorDigest,
+			CausalInput: result.Artifact.CausalInput,
+			Patch: result.Artifact.Patch, Evaluation: result.Artifact.Evaluation, Unknown: cloneUnknown(result.Artifact.Unknown),
+		}
+		if err := WriteJSON(dossierPath, dossier); err != nil {
+			return err
+		}
 		if _, err := CompileCandidate(goooPath, irPath); err != nil {
 			return fmt.Errorf("compile candidate %s: %w", result.Artifact.CandidateID, err)
 		}
 		report.Candidates[index].ArtifactGooo = filepath.ToSlash(filepath.Join("cases", report.Scenario, "candidates", result.Artifact.CandidateID+".gooo"))
 		report.Candidates[index].ArtifactIR = filepath.ToSlash(filepath.Join("cases", report.Scenario, "candidates", result.Artifact.CandidateID+".ir.json"))
+		report.Candidates[index].ArtifactPatch = filepath.ToSlash(filepath.Join("cases", report.Scenario, "candidates", result.Artifact.CandidateID+".patch.json"))
+		report.Candidates[index].ArtifactDossier = filepath.ToSlash(filepath.Join("cases", report.Scenario, "candidates", result.Artifact.CandidateID+".dossier.json"))
 	}
 	return WriteJSON(filepath.Join(caseDir, "case-report.json"), report)
 }
 
 func BuildConformance(meta MetaContract, metaRaw []byte, reports []CaseReport) ConformanceReport {
-	result := ConformanceReport{Schema: ConformanceSchema, Authority: meta.Authority, MetaDigest: Digest(metaRaw), Decision: DecisionClosed, Scenarios: len(reports), RepositoryWrites: 0, Cases: []ConformanceCase{}}
+	result := ConformanceReport{Schema: ConformanceSchema, Authority: meta.Authority, MetaDigest: Digest(metaRaw), Decision: DecisionClosed, Scenarios: len(reports), Cells: len(reports), ProofCounts: DecisionCounts{}, IndicatorCounts: DecisionCounts{}, PairedIndicatorVector: []string{}, ExternalUtilityUnknown: 0, RepositoryWrites: 0, LocalTestExecutions: 0, CrossProjectRequiredGates: meta.CrossProjectGate, Cases: []ConformanceCase{}}
 	for _, report := range reports {
 		pass := report.Decision == report.ExpectedDecision
 		result.Cases = append(result.Cases, ConformanceCase{Scenario: report.Scenario, Expected: report.ExpectedDecision, Observed: report.Decision, Pass: pass})
+		result.PairedIndicatorVector = append(result.PairedIndicatorVector, report.Scenario+"="+strings.Join(report.PairedIndicatorVector, "|"))
+		if report.Unknown != nil && report.Unknown.UnknownClass == "EXTERNAL_UTILITY_UNKNOWN" {
+			result.ExternalUtilityUnknown++
+		}
 		switch report.Decision {
 		case DecisionClosed:
 			result.Closed++
+			result.ProofCounts.Closed++
+			result.IndicatorCounts.Closed++
 		case DecisionUnknown:
 			result.Unknown++
+			result.ProofCounts.Unknown++
+			result.IndicatorCounts.Unknown++
 		case DecisionRefuted:
 			result.Refuted++
+			result.ProofCounts.Refuted++
+			result.IndicatorCounts.Refuted++
 		}
 		if !pass {
 			result.Decision = DecisionRefuted
@@ -96,8 +131,11 @@ func BuildConformance(meta MetaContract, metaRaw []byte, reports []CaseReport) C
 }
 
 func ValidateConformance(report ConformanceReport, meta MetaContract) error {
-	if report.Schema != ConformanceSchema || report.Scenarios != meta.Denominator.Scenarios || len(report.Cases) != meta.Denominator.Scenarios || report.RepositoryWrites != 0 {
+	if report.Schema != ConformanceSchema || report.Scenarios != meta.Denominator.Scenarios || report.Cells != 12 || len(report.Cases) != meta.Denominator.Scenarios || len(report.PairedIndicatorVector) != 12 || report.RepositoryWrites != 0 || report.LocalTestExecutions != 0 || report.CrossProjectRequiredGates != 0 {
 		return errors.New("conformance report does not match the .gooo denominator or input boundary")
+	}
+	if report.Closed != 4 || report.Unknown != 4 || report.Refuted != 4 || report.ProofCounts != meta.ProofCounts || report.IndicatorCounts != meta.IndicatorCounts {
+		return errors.New("conformance report does not match the declared 4/4/4 proof and indicator contract")
 	}
 	for _, testCase := range report.Cases {
 		if !testCase.Pass {

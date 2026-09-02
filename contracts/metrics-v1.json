@@ -4,8 +4,14 @@
   "integer_fields": [
     "go_files", "gooo_files", "physical_lines", "descendant_dirs", "regular_files",
     "generated_files", "generated_bytes", "wall_ms", "peak_rss_kib",
-    "tests_total", "tests_selected", "tests_executed", "tests_reused", "tests_failed", "tests_unknown"
+    "candidate_gooo_files", "candidate_ir_files", "candidate_patch_files", "candidate_dossier_files", "case_report_files", "causal_input_files",
+    "tests_total", "tests_selected", "tests_executed", "tests_reused", "tests_failed", "tests_unknown",
+    "proof_closed", "proof_unknown", "proof_refuted", "indicator_closed", "indicator_unknown", "indicator_refuted",
+    "external_utility_unknown", "local_test_executions", "cross_project_required_gates"
   ],
-  "test_semantics": "fixed counterexample denominator",
+  "test_semantics": "fixed counterexample denominator and exact paired before-after indicators",
+  "generated_artifacts": ["causal-input.json", "candidate-*.gooo", "candidate-*.ir.json", "candidate-*.patch.json", "candidate-*.dossier.json", "case-report.json", "conformance-report.json", "metrics.json"],
+  "paired_indicator_vector": "exact per-cell before/after evaluator evidence",
+  "forbidden_aggregates": ["score", "percentage"],
   "repository_writes": 0
 }

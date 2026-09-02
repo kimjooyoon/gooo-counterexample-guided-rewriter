@@ -20,6 +20,7 @@ func LoadMeta(path string) (MetaContract, []byte, error) {
 	if err := meta.Validate(); err != nil {
 		return MetaContract{}, nil, err
 	}
+	meta.ContractDigest = Digest(raw)
 	return meta, raw, nil
 }
 
@@ -85,6 +86,20 @@ func parseMeta(input string) (MetaContract, error) {
 			meta.Oracles = append(meta.Oracles, OraclePin{Name: values["name"], Repository: values["repository"], Release: values["release"], Digest: values["digest"], Required: mustBool(values["required"])})
 		case "generation_plan":
 			meta.GenerationPlan = GenerationPlan{Order: splitCSV(values["order"]), Outputs: splitCSV(values["outputs"])}
+		case "candidate_space":
+			meta.CandidateSpace = CandidateSpaceDecl{ID: values["id"], Digest: values["digest"], Bound: mustInt(values["bound"])}
+		case "rewrite_rule":
+			meta.Rule = RuleDecl{ID: values["id"], Digest: values["digest"], Count: mustInt(values["count"])}
+		case "evaluator":
+			meta.Evaluator = EvaluatorDecl{ID: values["id"], Digest: values["digest"], Kind: values["kind"]}
+		case "acceptance":
+			meta.Acceptance = AcceptanceDecl{Relation: values["relation"], Requires: splitCSV(values["requires"])}
+		case "meta_activity":
+			meta.MetaActivities = append(meta.MetaActivities, MetaActivity{Ordinal: mustInt(values["ordinal"]), ID: values["id"], Kind: values["kind"], Expected: values["expected"]})
+		case "proof_counts":
+			meta.ProofCounts = DecisionCounts{Closed: mustInt(values["closed"]), Unknown: mustInt(values["unknown"]), Refuted: mustInt(values["refuted"])}
+		case "indicator_counts":
+			meta.IndicatorCounts = DecisionCounts{Closed: mustInt(values["closed"]), Unknown: mustInt(values["unknown"]), Refuted: mustInt(values["refuted"])}
 		case "scenario":
 			meta.Scenarios = append(meta.Scenarios, ScenarioDecl{Ordinal: mustInt(values["ordinal"]), ID: values["id"], Fixture: values["fixture"], Expected: values["expected"]})
 		default:
@@ -115,6 +130,16 @@ func LoadCounterexample(path string) (Counterexample, []byte, error) {
 		TargetTerminal TerminalTrace  `json:"target_terminal"`
 		ReducedGraph   Graph          `json:"reduced_graph"`
 		Replay         ReplayEvidence `json:"replay"`
+		ContractDigest string          `json:"contract_digest"`
+		CandidateSpaceID string        `json:"candidate_space_id"`
+		CandidateSpaceDigest string    `json:"candidate_space_digest"`
+		RuleID         string          `json:"rule_id"`
+		RuleDigest     string          `json:"rule_digest"`
+		EvaluatorID    string          `json:"evaluator_id"`
+		EvaluatorDigest string         `json:"evaluator_digest"`
+		CausalInput    CausalInput     `json:"causal_input"`
+		Corpus         []CorpusCase    `json:"corpus"`
+		ExternalUtility ExternalUtility `json:"external_utility"`
 	}
 	if err := json.Unmarshal(raw, &record); err != nil {
 		return Counterexample{}, nil, fmt.Errorf("parse counterexample: %w", err)
@@ -140,6 +165,9 @@ func LoadCounterexample(path string) (Counterexample, []byte, error) {
 		Schema: record.Schema, ID: record.ID, Scenario: record.Scenario, SourceDigest: record.SourceDigest, ToolchainDigest: record.ToolchainDigest,
 		OriginSourceDigest: record.OriginSourceDigest, OriginAnchor: record.OriginAnchor, Baseline: record.Baseline,
 		TargetTerminal: record.TargetTerminal, ReducedGraph: record.ReducedGraph, Replay: record.Replay,
+		ContractDigest: record.ContractDigest, CandidateSpaceID: record.CandidateSpaceID, CandidateSpaceDigest: record.CandidateSpaceDigest,
+		RuleID: record.RuleID, RuleDigest: record.RuleDigest, EvaluatorID: record.EvaluatorID, EvaluatorDigest: record.EvaluatorDigest,
+		CausalInput: record.CausalInput, Corpus: record.Corpus, ExternalUtility: record.ExternalUtility,
 	}
 	if err := counterexample.Validate(); err != nil {
 		return Counterexample{}, nil, err
@@ -154,8 +182,8 @@ func (c Counterexample) Validate() error {
 	if !validDigest(c.SourceDigest) || !validDigest(c.ToolchainDigest) {
 		return fmt.Errorf("counterexample source or toolchain digest is invalid")
 	}
-	if c.Baseline.Decision != DecisionRefuted || c.Baseline.Reason == "" || !validDigest(c.Baseline.ReasonDigest) || c.Baseline.EffectTrace == nil {
-		return fmt.Errorf("counterexample baseline must be a REFUTED terminal with reason and effect trace")
+	if (c.Baseline.Decision != DecisionRefuted && c.Baseline.Decision != DecisionUnknown) || c.Baseline.Reason == "" || !validDigest(c.Baseline.ReasonDigest) || c.Baseline.EffectTrace == nil {
+		return fmt.Errorf("counterexample baseline must be an UNKNOWN or REFUTED terminal with reason and effect trace")
 	}
 	if err := c.ReducedGraph.Validate(); err != nil {
 		return err
@@ -169,6 +197,33 @@ func (c Counterexample) HasOrigin() bool {
 
 func (c Counterexample) HasTargetEvidence() bool {
 	return c.TargetTerminal.Valid()
+}
+
+func (c Counterexample) IdentityFields() map[string]string {
+	return map[string]string{
+		"candidate-space-id": c.CandidateSpaceID, "candidate-space-digest": c.CandidateSpaceDigest,
+		"rule-id": c.RuleID, "rule-digest": c.RuleDigest,
+		"evaluator-id": c.EvaluatorID, "evaluator-digest": c.EvaluatorDigest,
+	}
+}
+
+func (c Counterexample) HasCausalInput() bool {
+	return c.CausalInput.Valid()
+}
+
+func (c Counterexample) HasCorpus() bool {
+	if len(c.Corpus) == 0 {
+		return false
+	}
+	hasNormal, hasRegression := false, false
+	for _, item := range c.Corpus {
+		if item.ID == "" || item.Input == "" || (item.Class != "normal" && item.Class != "regression" && item.Class != "counterexample") || !item.Before.Valid() || !item.After.Valid() {
+			return false
+		}
+		hasNormal = hasNormal || item.Class == "normal"
+		hasRegression = hasRegression || item.Class == "regression"
+	}
+	return hasNormal && hasRegression
 }
 
 func (c Counterexample) AnchorVisible(ir SemanticIR) bool {
@@ -189,7 +244,12 @@ func (c Counterexample) AnchorVisible(ir SemanticIR) bool {
 }
 
 func (g Graph) ToIR(c Counterexample) SemanticIR {
-	return SemanticIR{Schema: IRSchema, Scenario: c.Scenario, OriginSourceDigest: c.OriginSourceDigest, ToolchainDigest: c.ToolchainDigest, Nodes: cloneNodes(g.Nodes), Edges: cloneEdges(g.Edges), Terminal: c.Baseline.Normalized()}
+	return SemanticIR{
+		Schema: IRSchema, Scenario: c.Scenario, OriginSourceDigest: c.OriginSourceDigest, ContractDigest: c.ContractDigest,
+		ToolchainDigest: c.ToolchainDigest, CandidateSpaceID: c.CandidateSpaceID, CandidateSpaceDigest: c.CandidateSpaceDigest,
+		RuleID: c.RuleID, RuleDigest: c.RuleDigest, EvaluatorID: c.EvaluatorID, EvaluatorDigest: c.EvaluatorDigest,
+		Nodes: cloneNodes(g.Nodes), Edges: cloneEdges(g.Edges), Terminal: c.Baseline.Normalized(),
+	}
 }
 
 func cloneNodes(values []GraphNode) []GraphNode {

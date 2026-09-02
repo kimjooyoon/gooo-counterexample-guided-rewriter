@@ -4,6 +4,15 @@
   "scenario": "missing-origin",
   "source_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
   "toolchain_digest": "sha256:e2147def056543c506d158ecd95cd8e666d91bfbaf1571d5b07aef4dc99ca112",
+  "contract_digest": "sha256:893ad0b174b0ae796dc882f9c0704ed0a7626316a1bdd7656a526a7a85f680e8",
+  "candidate_space_id": "gooo-candidate-space-v1",
+  "candidate_space_digest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+  "rule_id": "gooo-finite-rules-v1",
+  "rule_digest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+  "evaluator_id": "gooo-compiler-fixture-evaluator-v1",
+  "evaluator_digest": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
+  "causal_input": {"id": "causal-input", "kind": "counterexample", "observed_terminal": {"decision": "REFUTED", "reason": "origin cannot be proven", "reason_digest": "sha256:892efaad14b78be88f1aba4fe6787916488a71324defe465532d00cf41d13f21", "effect_trace": ["effect:publish"], "counterexample_visible": true}, "target_terminal": {"decision": "CLOSED", "reason": "origin-backed repair", "reason_digest": "sha256:dd714f5524961f294660edc35ad7b268d73912639c5a5056904b96ff7277cd0a", "effect_trace": ["effect:publish"], "counterexample_visible": false}},
+  "corpus": [{"id": "normal", "class": "normal", "input": "normal", "before": {"decision": "CLOSED", "reason": "corpus normal", "reason_digest": "sha256:4bdb3856e12a1b9975599cbed324d579030b0aaaa96f2ee4b076506b397ecfb0", "effect_trace": [], "counterexample_visible": false}, "after": {"decision": "CLOSED", "reason": "corpus normal", "reason_digest": "sha256:4bdb3856e12a1b9975599cbed324d579030b0aaaa96f2ee4b076506b397ecfb0", "effect_trace": [], "counterexample_visible": false}}, {"id": "regression", "class": "regression", "input": "regression", "before": {"decision": "REFUTED", "reason": "corpus regression", "reason_digest": "sha256:8f58b2a0b9252fe242a2556c6b477afd872042ed5976ba41d27e8cb6fea4195e", "effect_trace": [], "counterexample_visible": false}, "after": {"decision": "REFUTED", "reason": "corpus regression", "reason_digest": "sha256:8f58b2a0b9252fe242a2556c6b477afd872042ed5976ba41d27e8cb6fea4195e", "effect_trace": [], "counterexample_visible": false}}],
   "baseline": {
     "decision": "REFUTED",
     "reason": "origin cannot be proven",
@@ -16,12 +25,12 @@
     "reason": "origin-backed repair",
     "reason_digest": "sha256:dd714f5524961f294660edc35ad7b268d73912639c5a5056904b96ff7277cd0a",
     "effect_trace": ["effect:publish"],
-    "counterexample_visible": true
+    "counterexample_visible": false
   },
   "reduced_graph": {
     "schema": "gooo/semantic_graph/v1",
     "nodes": [
-      {"id": "effect-publish", "kind": "effect", "type": "effect<external-write>", "label": "publish without origin", "attributes": {"guardable": "true"}}
+      {"id": "effect-publish", "kind": "effect", "type": "effect<external-write>", "label": "publish without origin", "attributes": {"guardable": "true", "behavior_normal": "CLOSED", "behavior_regression": "REFUTED"}}
     ],
     "edges": []
   }
